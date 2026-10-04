@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doors Translator - Multilingual Edition</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            background-color: #121216;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+            padding: 20px 0;
+        }
+
+        .device-container {
+            background-color: #23232c;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.7), inset 0 2px 5px rgba(255,255,255,0.1);
+            border: 4px solid #1a1a21;
+            width: 520px;
+            max-width: 95vw;
+            position: relative;
+        }
+
+        .screen {
+            background: radial-gradient(circle, #3b285a 0%, #1c1130 100%);
+            border: 4px solid #7d5ab5;
+            border-radius: 6px;
+            height: 320px;
+            position: relative;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(125, 90, 181, 0.4);
+            overflow: hidden;
+        }
+
+        .screen::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .screen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 5;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .battery {
+            display: flex;
+            border: 2px solid #bba3e8;
+            padding: 2px;
+            border-radius: 3px;
+            width: 45px;
+            height: 20px;
+            position: relative;
+        }
+        .battery::after {
+            content: '';
+            position: absolute;
+            right: -5px;
+            top: 5px;
+            width: 3px;
+            height: 6px;
+            background-color: #bba3e8;
+            border-radius: 0 2px 2px 0;
+        }
+        .battery-bar {
+            background-color: #bba3e8;
+            flex: 1;
+            margin-right: 2px;
+            transition: background-color 0.3s ease, opacity 0.3s ease;
+        }
+        .battery-bar:last-child {
+            margin-right: 0;
+        }
+        .battery-bar.depleted {
+            background-color: transparent;
+            opacity: 0.2;
+        }
+
+        .translator-title {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #e0d4f7;
+            text-shadow: 0 0 8px rgba(224, 212, 247, 0.6);
+        }
+
+        /* Botón de Configuración en pantalla */
+        .settings-btn {
+            background: #4a3278;
+            border: 1px solid #bba3e8;
+            color: #e0d4f7;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .settings-btn:hover {
+            background: #6a43a8;
+        }
+
+        .screen-body {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            z-index: 5;
+        }
+
+        .speech-bubble {
+            border: 2px dashed #9b7ac4;
+            border-radius: 20px;
+            padding: 15px 20px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+            background: rgba(45, 30, 75, 0.4);
+        }
+
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 12px 10px 0;
+            border-style: solid;
+            border-color: #9b7ac4 transparent;
+            display: block;
+            width: 0;
+        }
+
+        .status-text {
+            font-size: 18px;
+            color: #d1bcef;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .translated-text {
+            font-size: 13px;
+            color: #fff;
+            min-height: 40px;
+            word-break: break-word;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1.3;
+        }
+
+        /* Modal de Configuración de Idioma */
+        .settings-modal {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(18, 14, 28, 0.92);
+            z-index: 20;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .settings-modal.active {
+            display: flex;
+        }
+
+        .settings-modal h3 {
+            color: #e0d4f7;
+            margin-bottom: 15px;
+            font-size: 18px;
+            letter-spacing: 1px;
+        }
+
+        .lang-options {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            width: 80%;
+            max-width: 250px;
+        }
+
+        .lang-btn {
+            background-color: #2e1f47;
+            border: 1px solid #7d5ab5;
+            color: #fff;
+            padding: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        .lang-btn:hover, .lang-btn.selected {
+            background-color: #6a43a8;
+            border-color: #e0d4f7;
+        }
+
+        .close-modal {
+            margin-top: 15px;
+            background-color: #4a3278;
+            font-size: 12px;
+        }
+
+        /* Panel de Control Externo */
+        .control-panel {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-panel label {
+            font-size: 13px;
+            color: #a0a0b0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background-color: #15151a;
+            border: 2px solid #3c3c4a;
+            border-radius: 6px;
+            padding: 10px 14px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #7d5ab5;
+        }
+
+        button {
+            background-color: #6a43a8;
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #7d5ab5;
+        }
+
+        .presets-title {
+            font-size: 11px;
+            color: #8c8c9e;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            background-color: #2a2a36;
+            font-size: 11px;
+            padding: 6px 10px;
+            border: 1px solid #444455;
+        }
+
+        .preset-btn:hover {
+            background-color: #3b3b4d;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="device-container">
+        <!-- Pantalla del Translator -->
+        <div class="screen" id="screen">
+            <!-- Modal de Configuración de Idioma -->
+            <div class="settings-modal" id="settingsModal">
+                <h3 id="modalTitle">Seleccionar Idioma</h3>
+                <div class="lang-options">
+                    <button class="lang-btn selected" onclick="changeLanguage('es')">🇪🇸 Español</button>
+                    <button class="lang-btn" onclick="changeLanguage('en')">🇬🇧 English</button>
+                    <button class="lang-btn" onclick="changeLanguage('pt')">🇧🇷 Português</button>
+                    <button class="lang-btn" onclick="changeLanguage('fr')">🇫🇷 Français</button>
+                    <button class="lang-btn" onclick="changeLanguage('de')">🇩🇪 Deutsch</button>
+                </div>
+                <button class="settings-btn close-modal" onclick="toggleSettings(false)">Cerrar</button>
+            </div>
+
+            <div class="screen-header">
+                <div class="battery" id="batteryContainer" title="Batería (39.24s totales)">
+                    <div class="battery-bar"></div>
+                    <div class="battery-bar"></div>
+                    <div class="battery-bar"></div>
+                    <div class="battery-bar"></div>
+                </div>
+                <div class="translator-title">TRANSLATOR</div>
+                <div class="header-right">
+                    <button class="settings-btn" onclick="toggleSettings(true)">⚙️ Config</button>
+                </div>
+            </div>
+
+            <div class="screen-body">
+                <div class="speech-bubble">
+                    <div id="statusText" class="status-text">Waiting...</div>
+                    <div id="translatedText" class="translated-text"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Escáner de Textos y Controles -->
+        <div class="control-panel">
+            <label id="scannerLabel" for="textScanner">Escáner de Textos (Entrada del Translator):</label>
+            <div class="input-group">
+                <input type="text" id="textScanner" placeholder="Escribe o detecta texto cifrado..." autocomplete="off">
+                <button id="scanBtn">Escanear</button>
+            </div>
+
+            <div class="presets-title" id="presetTitle">Frases de prueba de Cobbler (Doors):</div>
+            <div class="preset-buttons">
+                <button class="preset-btn" onclick="setPreset('')" id="btnReset">Reset</button>
+                <button class="preset-btn" onclick="setPreset('cobbler name. salutation!')">Saludo</button>
+                <button class="preset-btn" onclick="setPreset('find drink shiny water give cobbler energy, like specie. theory! liquid specie?')">Agua</button>
+                <button class="preset-btn" onclick="setPreset('television creature sandy cobbler, lucky, cobbler like small thing).')">TV</button>
+                <button class="preset-btn" onclick="setPreset('walker go? come back? more talk?')">Walker</button>
+                <button class="preset-btn" onclick="resetBattery()" id="btnBattery">Batería</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textScanner = document.getElementById('textScanner');
+        const scanBtn = document.getElementById('scanBtn');
+        const statusText = document.getElementById('statusText');
+        const translatedText = document.getElementById('translatedText');
+        const batteryBars = document.querySelectorAll('.battery-bar');
+        const settingsModal = document.getElementById('settingsModal');
+
+        // Traducciones de la interfaz según el país/idioma seleccionado
+        const uiTexts = {
+            es: {
+                modalTitle: "Seleccionar Idioma",
+                waiting: "Esperando...",
+                scannerLabel: "Escáner de Textos (Entrada del Translator):",
+                presetTitle: "Frases de prueba de Cobbler (Doors):",
+                scanBtn: "Escanear",
+                btnReset: "Reset",
+                btnBattery: "Batería",
+                lowBattery: "BATERÍA BAJA",
+                shutDown: "Dispositivo apagándose..."
+            },
+            en: {
+                modalTitle: "Select Language",
+                waiting: "Waiting...",
+                scannerLabel: "Text Scanner (Translator Input):",
+                presetTitle: "Cobbler Test Phrases (Doors):",
+                scanBtn: "Scan",
+                btnReset: "Reset",
+                btnBattery: "Battery",
+                lowBattery: "LOW BATTERY",
+                shutDown: "Device shutting down..."
+            },
+            pt: {
+                modalTitle: "Selecionar Idioma",
+                waiting: "Aguardando...",
+                scannerLabel: "Scanner de Texto (Entrada):",
+                presetTitle: "Frases de Teste Cobbler (Doors):",
+                scanBtn: "Escanear",
+                btnReset: "Reset",
+                btnBattery: "Bateria",
+                lowBattery: "BATERIA FRACA",
+                shutDown: "Desligando dispositivo..."
+            },
+            fr: {
+                modalTitle: "Sélectionner la Langue",
+                waiting: "En attente...",
+                scannerLabel: "Scanner de Texte (Entrée):",
+                presetTitle: "Phrases Test Cobbler (Doors):",
+                scanBtn: "Scanner",
+                btnReset: "Réinit",
+                btnBattery: "Batterie",
+                lowBattery: "BATTERIE FAIBLE",
+                shutDown: "Arrêt de l'appareil..."
+            },
+            de: {
+                modalTitle: "Sprache auswählen",
+                waiting: "Warten...",
+                scannerLabel: "Textscanner (Übersetzer-Eingabe):",
+                presetTitle: "Cobbler Testphrasen (Doors):",
+                scanBtn: "Scannen",
+                btnReset: "Zurück",
+                btnBattery: "Batterie",
+                lowBattery: "SCHWACHE BATTERIE",
+                shutDown: "Gerät schaltet sich aus..."
+            }
+        };
+
+        let currentLang = 'es';
+
+        function toggleLanguageStrings() {
+            const t = uiTexts[currentLang];
+            document.getElementById('modalTitle').textContent = t.modalTitle;
+            document.getElementById('scannerLabel').textContent = t.scannerLabel;
+            document.getElementById('presetTitle').textContent = t.presetTitle;
+            scanBtn.textContent = t.scanBtn;
+            document.getElementById('btnReset').textContent = t.btnReset;
+            document.getElementById('btnBattery').textContent = t.btnBattery;
+
+            if (textScanner.value.trim() === "") {
+                statusText.textContent = t.waiting;
+            }
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            
+            // Actualizar botones seleccionados en el modal
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('selected'));
+            event.target.classList.add('selected');
+
+            toggleLanguageStrings();
+            toggleSettings(false);
+        }
+
+        function toggleSettings(show) {
+            if (show) {
+                settingsModal.classList.add('active');
+            } else {
+                settingsModal.classList.remove('active');
+            }
+        }
+
+        // Batería de 39.24 segundos totales
+        const totalDurationMs = 39240; 
+        const intervalTimeMs = totalDurationMs / batteryBars.length;
+        let currentBarIndex = batteryBars.length - 1;
+        let batteryTimer = null;
+
+        function startBatteryDrain() {
+            if (batteryTimer) clearInterval(batteryTimer);
+            batteryBars.forEach(bar => bar.classList.remove('depleted'));
+            currentBarIndex = batteryBars.length - 1;
+
+            batteryTimer = setInterval(() => {
+                if (currentBarIndex >= 0) {
+                    batteryBars[currentBarIndex].classList.add('depleted');
+                    currentBarIndex--;
+                } else {
+                    clearInterval(batteryTimer);
+                    const t = uiTexts[currentLang];
+                    statusText.textContent = t.lowBattery;
+                    statusText.style.color = "#ff4d4d";
+                    translatedText.textContent = t.shutDown;
+                }
+            }, intervalTimeMs);
+        }
+
+        function resetBattery() {
+            startBatteryDrain();
+            processTranslation();
+        }
+
+        function processTranslation() {
+            const rawText = textScanner.value.trim();
+            const t = uiTexts[currentLang];
+
+            if (rawText === "") {
+                statusText.textContent = t.waiting;
+                translatedText.textContent = "";
+                statusText.style.color = "#d1bcef";
+            } else {
+                statusText.textContent = "COBBLER";
+                statusText.style.color = "#ffb347";
+                translatedText.textContent = `"${rawText}"`;
+            }
+        }
+
+        scanBtn.addEventListener('click', processTranslation);
+        
+        textScanner.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                processTranslation();
+            }
+        });
+
+        function setPreset(text) {
+            textScanner.value = text;
+            processTranslation();
+        }
+
+        // Iniciar ciclo de batería al cargar
+        startBatteryDrain();
+        toggleLanguageStrings();
+    </script>
+</body>
+</html>
