@@ -2,8 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doors Translator - Multilingual Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Doors Multi-Device Station</title>
     <style>
         * {
             box-sizing: border-box;
@@ -24,6 +24,42 @@
             padding: 20px 0;
         }
 
+        /* Bloqueador de pantalla horizontal (Landscape) en móviles */
+        .orientation-warning {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #0b0b0e;
+            z-index: 9999;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .orientation-warning h2 {
+            color: #ffb347;
+            font-size: 20px;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .orientation-warning p {
+            color: #a0a0b0;
+            font-size: 14px;
+        }
+
+        /* Activar el aviso si el dispositivo está en horizontal y es estrecho (móvil) */
+        @media screen and (max-height: 500px) and (orientation: landscape) {
+            .orientation-warning {
+                display: flex;
+            }
+        }
+
         .device-container {
             background-color: #23232c;
             padding: 30px;
@@ -35,9 +71,8 @@
             position: relative;
         }
 
+        /* Pantallas base según el módulo */
         .screen {
-            background: radial-gradient(circle, #3b285a 0%, #1c1130 100%);
-            border: 4px solid #7d5ab5;
             border-radius: 6px;
             height: 320px;
             position: relative;
@@ -45,10 +80,32 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(125, 90, 181, 0.4);
             overflow: hidden;
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
+        /* Estilo Módulo Translator (Morado) */
+        .screen.translator {
+            background: radial-gradient(circle, #3b285a 0%, #1c1130 100%);
+            border: 4px solid #7d5ab5;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(125, 90, 181, 0.4);
+        }
+
+        /* Estilo Módulo Flashlight (Verde) */
+        .screen.flashlight {
+            background: radial-gradient(circle, #234232 0%, #0f241a 100%);
+            border: 4px solid #5ab57d;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(90, 181, 125, 0.4);
+        }
+
+        /* Estilo Módulo Threat Detector (Naranja) */
+        .screen.threat {
+            background: radial-gradient(circle, #5a3828 0%, #301a11 100%);
+            border: 4px solid #b57d5a;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(181, 125, 90, 0.4);
+        }
+
+        /* Efecto de escaneo CRT */
         .screen::after {
             content: " ";
             display: block;
@@ -73,6 +130,7 @@
             gap: 10px;
         }
 
+        /* Baterías dinámicas según el módulo */
         .battery {
             display: flex;
             border: 2px solid #bba3e8;
@@ -89,7 +147,7 @@
             top: 5px;
             width: 3px;
             height: 6px;
-            background-color: #bba3e8;
+            background-color: inherit;
             border-radius: 0 2px 2px 0;
         }
         .battery-bar {
@@ -106,27 +164,40 @@
             opacity: 0.2;
         }
 
-        .translator-title {
-            font-size: 20px;
+        /* Colores específicos de batería y títulos por módulo */
+        .translator .battery { border-color: #bba3e8; }
+        .translator .battery::after { background-color: #bba3e8; }
+        .translator .battery-bar { background-color: #bba3e8; }
+        .translator .device-title { color: #e0d4f7; text-shadow: 0 0 8px rgba(224, 212, 247, 0.6); }
+
+        .flashlight .battery { border-color: #a3e8bb; }
+        .flashlight .battery::after { background-color: #a3e8bb; }
+        .flashlight .battery-bar { background-color: #a3e8bb; }
+        .flashlight .device-title { color: #d4f7e0; text-shadow: 0 0 8px rgba(212, 247, 224, 0.6); }
+
+        .threat .battery { border-color: #e8cbb3; }
+        .threat .battery::after { background-color: #e8cbb3; }
+        .threat .battery-bar { background-color: #e8cbb3; }
+        .threat .device-title { color: #f7e2d4; text-shadow: 0 0 8px rgba(247, 226, 212, 0.6); }
+
+        .device-title {
+            font-size: 17px;
             font-weight: bold;
-            letter-spacing: 2px;
-            color: #e0d4f7;
-            text-shadow: 0 0 8px rgba(224, 212, 247, 0.6);
+            letter-spacing: 1.5px;
         }
 
-        /* Botón de Configuración en pantalla */
         .settings-btn {
-            background: #4a3278;
-            border: 1px solid #bba3e8;
-            color: #e0d4f7;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid currentColor;
+            color: inherit;
             padding: 4px 8px;
-            font-size: 12px;
+            font-size: 11px;
             border-radius: 4px;
             cursor: pointer;
             transition: background 0.2s;
         }
         .settings-btn:hover {
-            background: #6a43a8;
+            background: rgba(255,255,255,0.2);
         }
 
         .screen-body {
@@ -139,6 +210,7 @@
             z-index: 5;
         }
 
+        /* Contenidos de pantallas */
         .speech-bubble {
             border: 2px dashed #9b7ac4;
             border-radius: 20px;
@@ -148,7 +220,6 @@
             position: relative;
             background: rgba(45, 30, 75, 0.4);
         }
-
         .speech-bubble::after {
             content: '';
             position: absolute;
@@ -163,7 +234,7 @@
         }
 
         .status-text {
-            font-size: 18px;
+            font-size: 17px;
             color: #d1bcef;
             font-weight: bold;
             text-transform: uppercase;
@@ -174,7 +245,7 @@
         .translated-text {
             font-size: 13px;
             color: #fff;
-            min-height: 40px;
+            min-height: 38px;
             word-break: break-word;
             display: flex;
             align-items: center;
@@ -182,11 +253,68 @@
             line-height: 1.3;
         }
 
-        /* Modal de Configuración de Idioma */
+        /* Iconos de los módulos de Flashlight y Threat */
+        .module-icon-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .icon-box {
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            width: 90px;
+            height: 90px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            position: relative;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .module-subtext {
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Selector de Módulos (Pestañas exteriores) */
+        .module-selector {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .module-tab {
+            flex: 1;
+            background-color: #1a1a21;
+            border: 2px solid #3c3c4a;
+            color: #aaa;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        .module-tab.active {
+            background-color: #3b285a;
+            border-color: #7d5ab5;
+            color: #fff;
+        }
+
+        /* Modal de Configuración */
         .settings-modal {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(18, 14, 28, 0.92);
+            background: rgba(18, 14, 28, 0.95);
             z-index: 20;
             display: none;
             flex-direction: column;
@@ -203,7 +331,7 @@
         .settings-modal h3 {
             color: #e0d4f7;
             margin-bottom: 15px;
-            font-size: 18px;
+            font-size: 16px;
             letter-spacing: 1px;
         }
 
@@ -222,22 +350,20 @@
             padding: 8px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
-            transition: background 0.2s;
+            font-size: 13px;
         }
-
-        .lang-btn:hover, .lang-btn.selected {
+        .lang-btn.selected, .lang-btn:hover {
             background-color: #6a43a8;
-            border-color: #e0d4f7;
         }
 
         .close-modal {
             margin-top: 15px;
             background-color: #4a3278;
-            font-size: 12px;
+            font-size: 11px;
+            padding: 6px 12px;
         }
 
-        /* Panel de Control Externo */
+        /* Panel de Control (Dinámico según módulo) */
         .control-panel {
             margin-top: 20px;
             display: flex;
@@ -246,7 +372,7 @@
         }
 
         .control-panel label {
-            font-size: 13px;
+            font-size: 12px;
             color: #a0a0b0;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -264,36 +390,37 @@
             border-radius: 6px;
             padding: 10px 14px;
             color: #fff;
-            font-size: 15px;
+            font-size: 14px;
             outline: none;
-            transition: border-color 0.2s;
         }
-
         input[type="text"]:focus {
             border-color: #7d5ab5;
         }
 
-        button {
+        button.action-btn {
             background-color: #6a43a8;
             color: white;
             border: none;
-            padding: 10px 18px;
+            padding: 10px 16px;
             border-radius: 6px;
             font-weight: bold;
             cursor: pointer;
             text-transform: uppercase;
-            letter-spacing: 1px;
-            transition: background-color 0.2s;
+            font-size: 12px;
+        }
+        button.action-btn:hover {
+            background-color: #7d5ab5;
         }
 
-        button:hover {
-            background-color: #7d5ab5;
+        .presets-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
         }
 
         .presets-title {
             font-size: 11px;
             color: #8c8c9e;
-            margin-top: 5px;
             text-transform: uppercase;
         }
 
@@ -308,8 +435,10 @@
             font-size: 11px;
             padding: 6px 10px;
             border: 1px solid #444455;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
         }
-
         .preset-btn:hover {
             background-color: #3b3b4d;
         }
@@ -317,14 +446,27 @@
 </head>
 <body>
 
+    <!-- Pantalla de advertencia si se gira el móvil en horizontal -->
+    <div class="orientation-warning">
+        <h2 id="warningTitle">⚠️ Gira tu dispositivo</h2>
+        <p id="warningText">Este dispositivo de Doors solo funciona en formato vertical.</p>
+    </div>
+
     <div class="device-container">
-        <!-- Pantalla del Translator -->
-        <div class="screen" id="screen">
-            <!-- Modal de Configuración de Idioma -->
+        <!-- Selector superior para cambiar de Módulo -->
+        <div class="module-selector">
+            <button class="module-tab active" id="tabTranslator" onclick="switchModule('translator')">Translator</button>
+            <button class="module-tab" id="tabFlashlight" onclick="switchModule('flashlight')">Flashlight</button>
+            <button class="module-tab" id="tabThreat" onclick="switchModule('threat')">Threat Detector</button>
+        </div>
+
+        <!-- Pantalla Principal del Dispositivo -->
+        <div class="screen translator" id="mainScreen">
+            <!-- Modal de Configuración -->
             <div class="settings-modal" id="settingsModal">
                 <h3 id="modalTitle">Seleccionar Idioma</h3>
                 <div class="lang-options">
-                    <button class="lang-btn selected" onclick="changeLanguage('es')">🇪🇸 Español</button>
+                    <button class="lang-btn" onclick="changeLanguage('es')">🇪🇸 Español</button>
                     <button class="lang-btn" onclick="changeLanguage('en')">🇬🇧 English</button>
                     <button class="lang-btn" onclick="changeLanguage('pt')">🇧🇷 Português</button>
                     <button class="lang-btn" onclick="changeLanguage('fr')">🇫🇷 Français</button>
@@ -340,145 +482,163 @@
                     <div class="battery-bar"></div>
                     <div class="battery-bar"></div>
                 </div>
-                <div class="translator-title">TRANSLATOR</div>
+                <div class="device-title" id="deviceTitle">TRANSLATOR</div>
                 <div class="header-right">
                     <button class="settings-btn" onclick="toggleSettings(true)">⚙️ Config</button>
                 </div>
             </div>
 
-            <div class="screen-body">
-                <div class="speech-bubble">
-                    <div id="statusText" class="status-text">Waiting...</div>
-                    <div id="translatedText" class="translated-text"></div>
-                </div>
+            <div class="screen-body" id="screenBodyContent">
+                <!-- Contenido dinámico según el módulo activo -->
             </div>
         </div>
 
-        <!-- Escáner de Textos y Controles -->
-        <div class="control-panel">
-            <label id="scannerLabel" for="textScanner">Escáner de Textos (Entrada del Translator):</label>
-            <div class="input-group">
-                <input type="text" id="textScanner" placeholder="Escribe o detecta texto cifrado..." autocomplete="off">
-                <button id="scanBtn">Escanear</button>
-            </div>
-
-            <div class="presets-title" id="presetTitle">Frases de prueba de Cobbler (Doors):</div>
-            <div class="preset-buttons">
-                <button class="preset-btn" onclick="setPreset('')" id="btnReset">Reset</button>
-                <button class="preset-btn" onclick="setPreset('cobbler name. salutation!')">Saludo</button>
-                <button class="preset-btn" onclick="setPreset('find drink shiny water give cobbler energy, like specie. theory! liquid specie?')">Agua</button>
-                <button class="preset-btn" onclick="setPreset('television creature sandy cobbler, lucky, cobbler like small thing).')">TV</button>
-                <button class="preset-btn" onclick="setPreset('walker go? come back? more talk?')">Walker</button>
-                <button class="preset-btn" onclick="resetBattery()" id="btnBattery">Batería</button>
-            </div>
+        <!-- Panel de Control Inferior (Cambia según el módulo) -->
+        <div class="control-panel" id="controlPanel">
+            <!-- Se llena por JavaScript -->
         </div>
     </div>
 
     <script>
-        const textScanner = document.getElementById('textScanner');
-        const scanBtn = document.getElementById('scanBtn');
-        const statusText = document.getElementById('statusText');
-        const translatedText = document.getElementById('translatedText');
-        const batteryBars = document.querySelectorAll('.battery-bar');
-        const settingsModal = document.getElementById('settingsModal');
+        let currentModule = 'translator';
+        let currentLang = 'en'; // Se ajustará automáticamente con navigator.language
 
-        // Traducciones de la interfaz según el país/idioma seleccionado
+        // Textos multilingües de la interfaz
         const uiTexts = {
             es: {
                 modalTitle: "Seleccionar Idioma",
+                translator: "TRANSLATOR",
+                flashlight: "FLASHLIGHT",
+                threat: "THREAT DETECTOR",
                 waiting: "Esperando...",
-                scannerLabel: "Escáner de Textos (Entrada del Translator):",
-                presetTitle: "Frases de prueba de Cobbler (Doors):",
+                scannerLabel: "Escáner de Textos (Entrada):",
                 scanBtn: "Escanear",
+                presetsTitle: "Frases de prueba de Cobbler:",
                 btnReset: "Reset",
                 btnBattery: "Batería",
                 lowBattery: "BATERÍA BAJA",
-                shutDown: "Dispositivo apagándose..."
+                shutDown: "Dispositivo apagándose...",
+                flashlightStatus: "Linterna del Teléfono",
+                notSupported: "Linterna no soportada en este navegador/PC",
+                threatStatus: "Zona Segura",
+                threatAlert: "¡Entidad Detectada!",
+                warningTitle: "⚠️ Gira tu dispositivo",
+                warningText: "Este dispositivo de Doors solo funciona en formato vertical."
             },
             en: {
                 modalTitle: "Select Language",
+                translator: "TRANSLATOR",
+                flashlight: "FLASHLIGHT",
+                threat: "THREAT DETECTOR",
                 waiting: "Waiting...",
-                scannerLabel: "Text Scanner (Translator Input):",
-                presetTitle: "Cobbler Test Phrases (Doors):",
+                scannerLabel: "Text Scanner (Input):",
                 scanBtn: "Scan",
+                presetsTitle: "Cobbler Test Phrases:",
                 btnReset: "Reset",
                 btnBattery: "Battery",
                 lowBattery: "LOW BATTERY",
-                shutDown: "Device shutting down..."
+                shutDown: "Device shutting down...",
+                flashlightStatus: "Phone Flashlight",
+                notSupported: "Flashlight not supported on this browser/PC",
+                threatStatus: "Safe Zone",
+                threatAlert: "Entity Detected!",
+                warningTitle: "⚠️ Rotate your device",
+                warningText: "This Doors device only works in portrait mode."
             },
             pt: {
                 modalTitle: "Selecionar Idioma",
+                translator: "TRANSLATOR",
+                flashlight: "FLASHLIGHT",
+                threat: "THREAT DETECTOR",
                 waiting: "Aguardando...",
-                scannerLabel: "Scanner de Texto (Entrada):",
-                presetTitle: "Frases de Teste Cobbler (Doors):",
+                scannerLabel: "Scanner de Texto:",
                 scanBtn: "Escanear",
+                presetsTitle: "Frases de Teste:",
                 btnReset: "Reset",
                 btnBattery: "Bateria",
                 lowBattery: "BATERIA FRACA",
-                shutDown: "Desligando dispositivo..."
+                shutDown: "Desligando...",
+                flashlightStatus: "Lanterna do Telefone",
+                notSupported: "Lanterna não suportada neste navegador/PC",
+                threatStatus: "Zona Segura",
+                threatAlert: "Entidade Detectada!",
+                warningTitle: "⚠️ Vire seu dispositivo",
+                warningText: "Este dispositivo do Doors funciona apenas no modo retrato."
             },
             fr: {
                 modalTitle: "Sélectionner la Langue",
+                translator: "TRANSLATOR",
+                flashlight: "FLASHLIGHT",
+                threat: "THREAT DETECTOR",
                 waiting: "En attente...",
-                scannerLabel: "Scanner de Texte (Entrée):",
-                presetTitle: "Phrases Test Cobbler (Doors):",
+                scannerLabel: "Scanner de Texte:",
                 scanBtn: "Scanner",
+                presetsTitle: "Phrases Test:",
                 btnReset: "Réinit",
                 btnBattery: "Batterie",
                 lowBattery: "BATTERIE FAIBLE",
-                shutDown: "Arrêt de l'appareil..."
+                shutDown: "Arrêt...",
+                flashlightStatus: "Lampe du Téléphone",
+                notSupported: "Lampe non supportée sur ce navigateur/PC",
+                threatStatus: "Zone Sûre",
+                threatAlert: "Entité Détectée!",
+                warningTitle: "⚠️ Tournez votre appareil",
+                warningText: "Cet appareil Doors fonctionne uniquement en mode portrait."
             },
             de: {
                 modalTitle: "Sprache auswählen",
+                translator: "TRANSLATOR",
+                flashlight: "FLASHLIGHT",
+                threat: "THREAT DETECTOR",
                 waiting: "Warten...",
-                scannerLabel: "Textscanner (Übersetzer-Eingabe):",
-                presetTitle: "Cobbler Testphrasen (Doors):",
+                scannerLabel: "Textscanner:",
                 scanBtn: "Scannen",
+                presetsTitle: "Testphrasen:",
                 btnReset: "Zurück",
                 btnBattery: "Batterie",
                 lowBattery: "SCHWACHE BATTERIE",
-                shutDown: "Gerät schaltet sich aus..."
+                shutDown: "Gerät aus...",
+                flashlightStatus: "Telefon-Taschenlampe",
+                notSupported: "Taschenlampe wird hier nicht unterstützt",
+                threatStatus: "Sichere Zone",
+                threatAlert: "Bedrohung Erkannt!",
+                warningTitle: "⚠️ Gerät drehen",
+                warningText: "Dieses Doors-Gerät funktioniert nur im Hochformat."
             }
         };
 
-        let currentLang = 'es';
+        // Detección automática del idioma del navegador al iniciar
+        function detectUserLanguage() {
+            const navLang = (navigator.language || navigator.userLanguage || 'en').substring(0, 2).toLowerCase();
+            if (uiTexts[navLang]) {
+                currentLang = navLang;
+            }
+            updateOrientationTexts();
+        }
 
-        function toggleLanguageStrings() {
+        function updateOrientationTexts() {
             const t = uiTexts[currentLang];
-            document.getElementById('modalTitle').textContent = t.modalTitle;
-            document.getElementById('scannerLabel').textContent = t.scannerLabel;
-            document.getElementById('presetTitle').textContent = t.presetTitle;
-            scanBtn.textContent = t.scanBtn;
-            document.getElementById('btnReset').textContent = t.btnReset;
-            document.getElementById('btnBattery').textContent = t.btnBattery;
-
-            if (textScanner.value.trim() === "") {
-                statusText.textContent = t.waiting;
+            const wTitle = document.getElementById('warningTitle');
+            const wText = document.getElementById('warningText');
+            if(wTitle && wText) {
+                wTitle.textContent = t.warningTitle;
+                wText.textContent = t.warningText;
             }
         }
 
-        function changeLanguage(lang) {
-            currentLang = lang;
-            
-            // Actualizar botones seleccionados en el modal
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('selected'));
-            event.target.classList.add('selected');
-
-            toggleLanguageStrings();
-            toggleSettings(false);
+        function updateLangButtonsUI() {
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('selected');
+                if(btn.getAttribute('onclick').includes(`'${currentLang}'`)) {
+                    btn.classList.add('selected');
+                }
+            });
         }
 
-        function toggleSettings(show) {
-            if (show) {
-                settingsModal.classList.add('active');
-            } else {
-                settingsModal.classList.remove('active');
-            }
-        }
-
-        // Batería de 39.24 segundos totales
+        // Batería compartida de 39.24 segundos totales (9.81s por barra)
         const totalDurationMs = 39240; 
-        const intervalTimeMs = totalDurationMs / batteryBars.length;
+        const batteryBars = document.querySelectorAll('.battery-bar');
+        let intervalTimeMs = totalDurationMs / batteryBars.length;
         let currentBarIndex = batteryBars.length - 1;
         let batteryTimer = null;
 
@@ -493,21 +653,199 @@
                     currentBarIndex--;
                 } else {
                     clearInterval(batteryTimer);
+                    if (flashlightActive) togglePhoneFlashlight(false);
                     const t = uiTexts[currentLang];
-                    statusText.textContent = t.lowBattery;
-                    statusText.style.color = "#ff4d4d";
-                    translatedText.textContent = t.shutDown;
+                    if(currentModule === 'translator') {
+                        document.getElementById('statusText').textContent = t.lowBattery;
+                        document.getElementById('translatedText').textContent = t.shutDown;
+                    }
                 }
             }, intervalTimeMs);
         }
 
         function resetBattery() {
             startBatteryDrain();
-            processTranslation();
+            if(currentModule === 'translator') processTranslation();
+        }
+
+        // Cambiar entre módulos (Translator, Flashlight, Threat Detector)
+        function switchModule(moduleName) {
+            if (currentModule === 'flashlight' && moduleName !== 'flashlight') {
+                togglePhoneFlashlight(false);
+            }
+
+            currentModule = moduleName;
+            const mainScreen = document.getElementById('mainScreen');
+            const deviceTitle = document.getElementById('deviceTitle');
+            const screenBody = document.getElementById('screenBodyContent');
+            const controlPanel = document.getElementById('controlPanel');
+            const t = uiTexts[currentLang];
+
+            document.querySelectorAll('.module-tab').forEach(tab => tab.classList.remove('active'));
+            document.getElementById('tab' + moduleName.charAt(0).toUpperCase() + moduleName.slice(1)).classList.add('active');
+
+            mainScreen.className = `screen ${moduleName}`;
+
+            if (moduleName === 'translator') {
+                deviceTitle.textContent = t.translator;
+                screenBody.innerHTML = `
+                    <div class="speech-bubble">
+                        <div id="statusText" class="status-text">${t.waiting}</div>
+                        <div id="translatedText" class="translated-text"></div>
+                    </div>
+                `;
+                controlPanel.innerHTML = `
+                    <label for="textScanner">${t.scannerLabel}</label>
+                    <div class="input-group">
+                        <input type="text" id="textScanner" placeholder="Escribe o detecta texto..." autocomplete="off">
+                        <button class="action-btn" id="scanBtn">${t.scanBtn}</button>
+                    </div>
+                    <div class="presets-container">
+                        <div class="presets-title">${t.presetsTitle}</div>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" onclick="setPreset('')">${t.btnReset}</button>
+                            <button class="preset-btn" onclick="setPreset('cobbler name. salutation!')">Cobbler</button>
+                            <button class="preset-btn" onclick="setPreset('find drink shiny water give cobbler energy, like specie.')">Agua</button>
+                            <button class="preset-btn" onclick="setPreset('television creature sandy cobbler...')">TV</button>
+                            <button class="preset-btn" onclick="resetBattery()">${t.btnBattery}</button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('scanBtn').addEventListener('click', processTranslation);
+                document.getElementById('textScanner').addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') processTranslation();
+                });
+
+            } else if (moduleName === 'flashlight') {
+                deviceTitle.textContent = t.flashlight;
+                screenBody.innerHTML = `
+                    <div class="module-icon-container">
+                        <div class="icon-box" id="flashlightIconBox">🔦</div>
+                        <div class="module-subtext" id="flashlightStatusText">${t.flashlightStatus}: <span id="flashStateLabel" style="color: #ff4d4d;">OFF</span></div>
+                    </div>
+                `;
+                controlPanel.innerHTML = `
+                    <div class="presets-container">
+                        <div class="presets-title">Linterna de Cámara (Móvil):</div>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" style="background-color: #3b5a3b; font-weight: bold;" onclick="toggleFlashlightDevice()">Encender / Apagar Linterna</button>
+                            <button class="preset-btn" onclick="resetBattery()">${t.btnBattery}</button>
+                        </div>
+                    </div>
+                `;
+
+            } else if (moduleName === 'threat') {
+                deviceTitle.textContent = t.threat;
+                screenBody.innerHTML = `
+                    <div class="module-icon-container">
+                        <div class="icon-box" id="threatIcon">⚠️</div>
+                        <div class="module-subtext" id="threatStatusText">${t.threatStatus}</div>
+                    </div>
+                `;
+                controlPanel.innerHTML = `
+                    <div class="presets-container">
+                        <div class="presets-title">Simulador de Amenaza:</div>
+                        <div class="preset-buttons">
+                            <button class="preset-btn" onclick="toggleThreatState()">Simular Alerta</button>
+                            <button class="preset-btn" onclick="resetBattery()">${t.btnBattery}</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Control real de la linterna del teléfono mediante Web API (Torch)
+        let mediaStream = null;
+        let trackCapabilities = null;
+        let flashlightActive = false;
+
+        async function toggleFlashlightDevice() {
+            const t = uiTexts[currentLang];
+            const stateLabel = document.getElementById('flashStateLabel');
+            const iconBox = document.getElementById('flashlightIconBox');
+
+            if (!flashlightActive) {
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' }
+                    });
+                    const track = mediaStream.getVideoTracks()[0];
+                    trackCapabilities = track.getCapabilities();
+
+                    if (!trackCapabilities.torch) {
+                        alert(t.notSupported);
+                        stopMediaStream();
+                        return;
+                    }
+
+                    await track.applyConstraints({ advanced: [{ torch: true }] });
+                    flashlightActive = true;
+
+                    if (stateLabel) {
+                        stateLabel.textContent = "ON";
+                        stateLabel.style.color = "#4dff4d";
+                    }
+                    if (iconBox) iconBox.style.borderColor = "#4dff4d";
+
+                } catch (err) {
+                    console.error(err);
+                    alert(t.notSupported + " (Permiso denegado o dispositivo sin flash)");
+                }
+            } else {
+                togglePhoneFlashlight(false);
+            }
+        }
+
+        function togglePhoneFlashlight(turnOff) {
+            if (turnOff || flashlightActive) {
+                if (mediaStream) {
+                    const track = mediaStream.getVideoTracks()[0];
+                    if (track && trackCapabilities && trackCapabilities.torch) {
+                        track.applyConstraints({ advanced: [{ torch: false }] }).catch(() => {});
+                    }
+                    stopMediaStream();
+                }
+                flashlightActive = false;
+                const stateLabel = document.getElementById('flashStateLabel');
+                const iconBox = document.getElementById('flashlightIconBox');
+                if (stateLabel) {
+                    stateLabel.textContent = "OFF";
+                    stateLabel.style.color = "#ff4d4d";
+                }
+                if (iconBox) iconBox.style.borderColor = "currentColor";
+            }
+        }
+
+        function stopMediaStream() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+        }
+
+        let threatActive = false;
+        function toggleThreatState() {
+            threatActive = !threatActive;
+            const status = document.getElementById('threatStatusText');
+            const icon = document.getElementById('threatIcon');
+            const t = uiTexts[currentLang];
+            if(threatActive) {
+                status.textContent = t.threatAlert;
+                status.style.color = "#ff4d4d";
+                icon.style.borderColor = "#ff4d4d";
+            } else {
+                status.textContent = t.threatStatus;
+                status.style.color = "#fff";
+                icon.style.borderColor = "currentColor";
+            }
         }
 
         function processTranslation() {
+            const textScanner = document.getElementById('textScanner');
+            if(!textScanner) return;
             const rawText = textScanner.value.trim();
+            const statusText = document.getElementById('statusText');
+            const translatedText = document.getElementById('translatedText');
             const t = uiTexts[currentLang];
 
             if (rawText === "") {
@@ -521,22 +859,34 @@
             }
         }
 
-        scanBtn.addEventListener('click', processTranslation);
-        
-        textScanner.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
+        function setPreset(text) {
+            const textScanner = document.getElementById('textScanner');
+            if(textScanner) {
+                textScanner.value = text;
                 processTranslation();
             }
-        });
-
-        function setPreset(text) {
-            textScanner.value = text;
-            processTranslation();
         }
 
-        // Iniciar ciclo de batería al cargar
+        function toggleSettings(show) {
+            const modal = document.getElementById('settingsModal');
+            if (show) modal.classList.add('active');
+            else modal.classList.remove('active');
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            updateLangButtonsUI();
+            document.getElementById('modalTitle').textContent = uiTexts[currentLang].modalTitle;
+            updateOrientationTexts();
+            switchModule(currentModule);
+            toggleSettings(false);
+        }
+
+        // Inicialización automática al cargar
+        detectUserLanguage();
+        updateLangButtonsUI();
+        switchModule('translator');
         startBatteryDrain();
-        toggleLanguageStrings();
     </script>
 </body>
 </html>
