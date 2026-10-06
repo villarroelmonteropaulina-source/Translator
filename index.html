@@ -53,7 +53,6 @@
             font-size: 14px;
         }
 
-        /* Activar el aviso si el dispositivo está en horizontal y es estrecho (móvil) */
         @media screen and (max-height: 500px) and (orientation: landscape) {
             .orientation-warning {
                 display: flex;
@@ -89,6 +88,16 @@
             background: radial-gradient(circle, #3b285a 0%, #1c1130 100%);
             border: 4px solid #7d5ab5;
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(125, 90, 181, 0.4);
+        }
+
+        /* Estilo de Pantalla Vacía / Batería Agotada (Gris como en la imagen) */
+        .screen.dead-battery {
+            background: #2a2d34 !important;
+            border: 4px solid #3c4049 !important;
+            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9) !important;
+        }
+        .screen.dead-battery::after {
+            display: none !important;
         }
 
         /* Estilo Módulo Flashlight (Verde) */
@@ -170,6 +179,11 @@
         .translator .battery-bar { background-color: #bba3e8; }
         .translator .device-title { color: #e0d4f7; text-shadow: 0 0 8px rgba(224, 212, 247, 0.6); }
 
+        .dead-battery .battery { border-color: #707582; }
+        .dead-battery .battery::after { background-color: #707582; }
+        .dead-battery .battery-bar { background-color: #707582; }
+        .dead-battery .device-title { color: #8a919e; text-shadow: none; }
+
         .flashlight .battery { border-color: #a3e8bb; }
         .flashlight .battery::after { background-color: #a3e8bb; }
         .flashlight .battery-bar { background-color: #a3e8bb; }
@@ -220,6 +234,10 @@
             position: relative;
             background: rgba(45, 30, 75, 0.4);
         }
+        .dead-battery .speech-bubble {
+            border-color: #555b66;
+            background: rgba(60, 65, 75, 0.3);
+        }
         .speech-bubble::after {
             content: '';
             position: absolute;
@@ -232,6 +250,9 @@
             display: block;
             width: 0;
         }
+        .dead-battery .speech-bubble::after {
+            border-color: #555b66 transparent;
+        }
 
         .status-text {
             font-size: 17px;
@@ -240,6 +261,9 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             margin-bottom: 5px;
+        }
+        .dead-battery .status-text {
+            color: #ff6b6b;
         }
 
         .translated-text {
@@ -251,6 +275,9 @@
             align-items: center;
             justify-content: center;
             line-height: 1.3;
+        }
+        .dead-battery .translated-text {
+            color: #adb3c2;
         }
 
         /* Iconos de los módulos de Flashlight y Threat */
@@ -396,6 +423,12 @@
         input[type="text"]:focus {
             border-color: #7d5ab5;
         }
+        input[type="text"]:disabled {
+            background-color: #1f2228;
+            border-color: #353840;
+            color: #6c7280;
+            cursor: not-allowed;
+        }
 
         button.action-btn {
             background-color: #6a43a8;
@@ -410,6 +443,11 @@
         }
         button.action-btn:hover {
             background-color: #7d5ab5;
+        }
+        button.action-btn:disabled {
+            background-color: #3a3f4a;
+            color: #6c7280;
+            cursor: not-allowed;
         }
 
         .presets-container {
@@ -446,23 +484,19 @@
 </head>
 <body>
 
-    <!-- Pantalla de advertencia si se gira el móvil en horizontal -->
     <div class="orientation-warning">
         <h2 id="warningTitle">⚠️ Gira tu dispositivo</h2>
         <p id="warningText">Este dispositivo de Doors solo funciona en formato vertical.</p>
     </div>
 
     <div class="device-container">
-        <!-- Selector superior para cambiar de Módulo -->
         <div class="module-selector">
             <button class="module-tab active" id="tabTranslator" onclick="switchModule('translator')">Translator</button>
             <button class="module-tab" id="tabFlashlight" onclick="switchModule('flashlight')">Flashlight</button>
             <button class="module-tab" id="tabThreat" onclick="switchModule('threat')">Threat Detector</button>
         </div>
 
-        <!-- Pantalla Principal del Dispositivo -->
         <div class="screen translator" id="mainScreen">
-            <!-- Modal de Configuración -->
             <div class="settings-modal" id="settingsModal">
                 <h3 id="modalTitle">Seleccionar Idioma</h3>
                 <div class="lang-options">
@@ -476,7 +510,7 @@
             </div>
 
             <div class="screen-header">
-                <div class="battery" id="batteryContainer" title="Batería (39.24s totales)">
+                <div class="battery" id="batteryContainer" title="Batería (148s totales / 37s por barra)">
                     <div class="battery-bar"></div>
                     <div class="battery-bar"></div>
                     <div class="battery-bar"></div>
@@ -484,26 +518,23 @@
                 </div>
                 <div class="device-title" id="deviceTitle">TRANSLATOR</div>
                 <div class="header-right">
-                    <button class="settings-btn" onclick="toggleSettings(true)">⚙️ Config</button>
+                    <button class="settings-btn" onclick="toggleSettings(true)">⚙️️ Config</button>
                 </div>
             </div>
 
             <div class="screen-body" id="screenBodyContent">
-                <!-- Contenido dinámico según el módulo activo -->
             </div>
         </div>
 
-        <!-- Panel de Control Inferior (Cambia según el módulo) -->
         <div class="control-panel" id="controlPanel">
-            <!-- Se llena por JavaScript -->
         </div>
     </div>
 
     <script>
         let currentModule = 'translator';
-        let currentLang = 'en'; // Se ajustará automáticamente con navigator.language
+        let currentLang = 'en';
+        let batteryDepleted = false;
 
-        // Textos multilingües de la interfaz
         const uiTexts = {
             es: {
                 modalTitle: "Seleccionar Idioma",
@@ -517,7 +548,7 @@
                 btnReset: "Reset",
                 btnBattery: "Batería",
                 lowBattery: "BATERÍA BAJA",
-                shutDown: "Dispositivo apagándose...",
+                shutDownMessage: "SISTEMA BLOQUEADO",
                 flashlightStatus: "Linterna del Teléfono",
                 notSupported: "Linterna no soportada en este navegador/PC",
                 threatStatus: "Zona Segura",
@@ -537,7 +568,7 @@
                 btnReset: "Reset",
                 btnBattery: "Battery",
                 lowBattery: "LOW BATTERY",
-                shutDown: "Device shutting down...",
+                shutDownMessage: "SYSTEM LOCKED",
                 flashlightStatus: "Phone Flashlight",
                 notSupported: "Flashlight not supported on this browser/PC",
                 threatStatus: "Safe Zone",
@@ -557,7 +588,7 @@
                 btnReset: "Reset",
                 btnBattery: "Bateria",
                 lowBattery: "BATERIA FRACA",
-                shutDown: "Desligando...",
+                shutDownMessage: "SISTEMA BLOQUEADO",
                 flashlightStatus: "Lanterna do Telefone",
                 notSupported: "Lanterna não suportada neste navegador/PC",
                 threatStatus: "Zona Segura",
@@ -577,7 +608,7 @@
                 btnReset: "Réinit",
                 btnBattery: "Batterie",
                 lowBattery: "BATTERIE FAIBLE",
-                shutDown: "Arrêt...",
+                shutDownMessage: "SYSTÈME VERROUILLÉ",
                 flashlightStatus: "Lampe du Téléphone",
                 notSupported: "Lampe non supportée sur ce navigateur/PC",
                 threatStatus: "Zone Sûre",
@@ -597,7 +628,7 @@
                 btnReset: "Zurück",
                 btnBattery: "Batterie",
                 lowBattery: "SCHWACHE BATTERIE",
-                shutDown: "Gerät aus...",
+                shutDownMessage: "SYSTEM GESPERRT",
                 flashlightStatus: "Telefon-Taschenlampe",
                 notSupported: "Taschenlampe wird hier nicht unterstützt",
                 threatStatus: "Sichere Zone",
@@ -607,7 +638,6 @@
             }
         };
 
-        // Detección automática del idioma del navegador al iniciar
         function detectUserLanguage() {
             const navLang = (navigator.language || navigator.userLanguage || 'en').substring(0, 2).toLowerCase();
             if (uiTexts[navLang]) {
@@ -635,10 +665,10 @@
             });
         }
 
-        // Batería compartida de 39.24 segundos totales (9.81s por barra)
-        const totalDurationMs = 39240; 
+        // Configuración exacta: 37 segundos por barra, 148 segundos en total (148000 ms)
+        const totalDurationMs = 148000; 
         const batteryBars = document.querySelectorAll('.battery-bar');
-        let intervalTimeMs = totalDurationMs / batteryBars.length;
+        let intervalTimeMs = totalDurationMs / batteryBars.length; // 37000 ms (37s) por barra
         let currentBarIndex = batteryBars.length - 1;
         let batteryTimer = null;
 
@@ -646,6 +676,7 @@
             if (batteryTimer) clearInterval(batteryTimer);
             batteryBars.forEach(bar => bar.classList.remove('depleted'));
             currentBarIndex = batteryBars.length - 1;
+            batteryDepleted = false;
 
             batteryTimer = setInterval(() => {
                 if (currentBarIndex >= 0) {
@@ -653,11 +684,23 @@
                     currentBarIndex--;
                 } else {
                     clearInterval(batteryTimer);
+                    batteryDepleted = true;
                     if (flashlightActive) togglePhoneFlashlight(false);
+                    
+                    const mainScreen = document.getElementById('mainScreen');
+                    mainScreen.className = "screen dead-battery";
+                    
                     const t = uiTexts[currentLang];
                     if(currentModule === 'translator') {
-                        document.getElementById('statusText').textContent = t.lowBattery;
-                        document.getElementById('translatedText').textContent = t.shutDown;
+                        const statusText = document.getElementById('statusText');
+                        const translatedText = document.getElementById('translatedText');
+                        const textScanner = document.getElementById('textScanner');
+                        const scanBtn = document.getElementById('scanBtn');
+
+                        if(statusText) statusText.textContent = t.lowBattery;
+                        if(translatedText) translatedText.textContent = t.shutDownMessage;
+                        if(textScanner) textScanner.disabled = true;
+                        if(scanBtn) scanBtn.disabled = true;
                     }
                 }
             }, intervalTimeMs);
@@ -665,10 +708,9 @@
 
         function resetBattery() {
             startBatteryDrain();
-            if(currentModule === 'translator') processTranslation();
+            switchModule(currentModule);
         }
 
-        // Cambiar entre módulos (Translator, Flashlight, Threat Detector)
         function switchModule(moduleName) {
             if (currentModule === 'flashlight' && moduleName !== 'flashlight') {
                 togglePhoneFlashlight(false);
@@ -684,21 +726,25 @@
             document.querySelectorAll('.module-tab').forEach(tab => tab.classList.remove('active'));
             document.getElementById('tab' + moduleName.charAt(0).toUpperCase() + moduleName.slice(1)).classList.add('active');
 
-            mainScreen.className = `screen ${moduleName}`;
+            if (batteryDepleted) {
+                mainScreen.className = "screen dead-battery";
+            } else {
+                mainScreen.className = `screen ${moduleName}`;
+            }
 
             if (moduleName === 'translator') {
                 deviceTitle.textContent = t.translator;
                 screenBody.innerHTML = `
                     <div class="speech-bubble">
-                        <div id="statusText" class="status-text">${t.waiting}</div>
-                        <div id="translatedText" class="translated-text"></div>
+                        <div id="statusText" class="status-text">${batteryDepleted ? t.lowBattery : t.waiting}</div>
+                        <div id="translatedText" class="translated-text">${batteryDepleted ? t.shutDownMessage : ''}</div>
                     </div>
                 `;
                 controlPanel.innerHTML = `
                     <label for="textScanner">${t.scannerLabel}</label>
                     <div class="input-group">
-                        <input type="text" id="textScanner" placeholder="Escribe o detecta texto..." autocomplete="off">
-                        <button class="action-btn" id="scanBtn">${t.scanBtn}</button>
+                        <input type="text" id="textScanner" placeholder="Escribe o detecta texto..." autocomplete="off" ${batteryDepleted ? 'disabled' : ''}>
+                        <button class="action-btn" id="scanBtn" ${batteryDepleted ? 'disabled' : ''}>${t.scanBtn}</button>
                     </div>
                     <div class="presets-container">
                         <div class="presets-title">${t.presetsTitle}</div>
@@ -711,10 +757,12 @@
                         </div>
                     </div>
                 `;
-                document.getElementById('scanBtn').addEventListener('click', processTranslation);
-                document.getElementById('textScanner').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') processTranslation();
-                });
+                if (!batteryDepleted) {
+                    document.getElementById('scanBtn').addEventListener('click', processTranslation);
+                    document.getElementById('textScanner').addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') processTranslation();
+                    });
+                }
 
             } else if (moduleName === 'flashlight') {
                 deviceTitle.textContent = t.flashlight;
@@ -754,12 +802,12 @@
             }
         }
 
-        // Control real de la linterna del teléfono mediante Web API (Torch)
         let mediaStream = null;
         let trackCapabilities = null;
         let flashlightActive = false;
 
         async function toggleFlashlightDevice() {
+            if (batteryDepleted) return;
             const t = uiTexts[currentLang];
             const stateLabel = document.getElementById('flashStateLabel');
             const iconBox = document.getElementById('flashlightIconBox');
@@ -825,6 +873,7 @@
 
         let threatActive = false;
         function toggleThreatState() {
+            if (batteryDepleted) return;
             threatActive = !threatActive;
             const status = document.getElementById('threatStatusText');
             const icon = document.getElementById('threatIcon');
@@ -841,6 +890,7 @@
         }
 
         function processTranslation() {
+            if (batteryDepleted) return;
             const textScanner = document.getElementById('textScanner');
             if(!textScanner) return;
             const rawText = textScanner.value.trim();
@@ -860,6 +910,7 @@
         }
 
         function setPreset(text) {
+            if (batteryDepleted) return;
             const textScanner = document.getElementById('textScanner');
             if(textScanner) {
                 textScanner.value = text;
@@ -882,7 +933,6 @@
             toggleSettings(false);
         }
 
-        // Inicialización automática al cargar
         detectUserLanguage();
         updateLangButtonsUI();
         switchModule('translator');
