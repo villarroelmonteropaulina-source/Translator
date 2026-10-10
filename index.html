@@ -214,6 +214,7 @@
             background: transparent;
             display: block;
             margin: 0 auto;
+            cursor: pointer;
         }
 
         .module-selector { display: flex; gap: 6px; margin-bottom: 12px; }
@@ -478,7 +479,7 @@
         }
 
         function resetBattery() {
-            if(currentModule === 'egg') initEggGame();
+            if(currentModule === 'egg') resetEggToMenu();
             startBatteryDrain();
             switchModule(currentModule);
         }
@@ -579,85 +580,120 @@
                 `;
                 controlPanel.innerHTML = `
                     <div class="presets-container" style="align-items: center;">
-                        <div class="presets-title">Controles (Canasto):</div>
-                        <div class="preset-buttons" style="justify-content: center; width: 100%;">
-                            <button class="preset-btn" style="padding: 10px 20px; font-size: 16px;" onclick="moveBasket(-25)">◀ IZQ</button>
-                            <button class="preset-btn" style="padding: 10px 20px; font-size: 16px;" onclick="moveBasket(25)">DER ▶</button>
-                            <button class="preset-btn" style="background-color: #6a43a8;" onclick="initEggGame()">Reiniciar</button>
+                        <div class="presets-title">Controles (Humano):</div>
+                        <div class="preset-buttons" style="justify-content: center; width: 100%; display:flex; gap:5px;">
+                            <button class="preset-btn" style="padding: 10px 15px;" onclick="moveHuman(-25)">◀ IZQ</button>
+                            <button class="preset-btn" style="padding: 10px 15px;" onclick="moveHuman(25)">DER ▶</button>
+                            <button class="preset-btn" style="background-color: #6a43a8;" onclick="resetEggToMenu()">Menú</button>
                         </div>
                     </div>
                 `;
-                initEggGame();
+                initEggMenu();
             }
         }
 
-        /* --- MOTOR DEL JUEGO EGG / CHARLES CON SCORE MENU --- */
+        /* --- MOTOR DEL JUEGO EGG (OBJETIVO: 4 HUEVOS POR RONDA) --- */
         let eggAnimId = null;
         let bestEggScore = 0;
         let eggGameState = {
+            state: 'MENU',
             score: 0,
             lives: 3,
             level: 1,
-            isInfinite: false,
-            basketX: 120,
+            roundEggsCollected: 0, // Cuenta los huevos recolectados en la ronda actual (meta: 4)
+            humanX: 120,
             eggs: [],
             spawnTimer: 0,
-            gameStarted: false,
-            gameOver: false
+            brokenEggsCount: 0
         };
 
-        function initEggGame() {
+        function initEggMenu() {
+            eggGameState.state = 'MENU';
+            eggGameState.brokenEggsCount = 0;
+            if(eggAnimId) cancelAnimationFrame(eggAnimId);
+            runEggLoop();
+        }
+
+        function resetEggToMenu() {
+            initEggMenu();
+        }
+
+        function startEggGame() {
             eggGameState = {
+                state: 'PLAYING',
                 score: 0,
                 lives: 3,
                 level: 1,
-                isInfinite: false,
-                basketX: 120,
+                roundEggsCollected: 0,
+                humanX: 120,
                 eggs: [],
                 spawnTimer: 0,
+                brokenEggsCount: 0
             };
-            // Si el juego ya había terminado, reiniciamos el estado por completo
-            eggGameState.gameStarted = true;
-            eggGameState.gameOver = false;
-            
             if(eggAnimId) cancelAnimationFrame(eggAnimId);
             runEggLoop();
         }
 
         function stopEggGame(paused) {
             if(eggAnimId) cancelAnimationFrame(eggAnimId);
-            eggGameState.gameStarted = false;
+            eggGameState.state = 'PAUSED';
         }
 
-        function moveBasket(offset) {
-            if (!eggGameState.gameStarted || eggGameState.gameOver) return;
-            eggGameState.basketX += offset;
-            if (eggGameState.basketX < 10) eggGameState.basketX = 10;
-            if (eggGameState.basketX > 240) eggGameState.basketX = 240;
+        function moveHuman(offset) {
+            if (eggGameState.state !== 'PLAYING') return;
+            eggGameState.humanX += offset;
+            if (eggGameState.humanX < 10) eggGameState.humanX = 10;
+            if (eggGameState.humanX > 235) eggGameState.humanX = 235;
         }
 
         window.addEventListener('keydown', (e) => {
             if (currentModule === 'egg') {
-                if (e.key === 'ArrowLeft') moveBasket(-25);
-                if (e.key === 'ArrowRight') moveBasket(25);
+                if (e.key === 'ArrowLeft') moveHuman(-25);
+                if (e.key === 'ArrowRight') moveHuman(25);
+                if (e.key === ' ' || e.key === 'Enter') {
+                    if (eggGameState.state === 'MENU' || eggGameState.state === 'GAMEOVER' || eggGameState.state === 'ANTISHEAT') {
+                        startEggGame();
+                    }
+                }
             }
         });
 
+        document.addEventListener('click', (e) => {
+            if (currentModule === 'egg') {
+                const canvas = document.getElementById('eggCanvas');
+                if (canvas && e.target === canvas) {
+                    if (eggGameState.state === 'MENU' || eggGameState.state === 'GAMEOVER' || eggGameState.state === 'ANTISHEAT') {
+                        startEggGame();
+                    }
+                }
+            }
+        });
+
+        function registerBrokenEgg() {
+            eggGameState.brokenEggsCount++;
+            if (eggGameState.brokenEggsCount >= 3) {
+                eggGameState.brokenEggsCount = 0;
+                if (Math.random() < 0.0001) {
+                    eggGameState.state = 'ANTISHEAT';
+                }
+            }
+        }
+
         function runEggLoop() {
             const canvas = document.getElementById('eggCanvas');
-            if (!canvas || !eggGameState.gameStarted) return;
+            if (!canvas) return;
             const ctx = canvas.getContext('2d');
 
-            if (!eggGameState.gameOver) {
+            if (eggGameState.state === 'PLAYING') {
                 eggGameState.spawnTimer++;
-                let spawnRate = Math.max(40 - (eggGameState.level * 3), 15);
+                let spawnRate = Math.max(40 - (eggGameState.level * 2), 20);
                 if (eggGameState.spawnTimer > spawnRate) {
                     eggGameState.spawnTimer = 0;
                     let isBlue = Math.random() < 0.25;
                     eggGameState.eggs.push({
                         x: Math.random() * 240 + 20,
                         y: 0,
-                        speed: 1.5 + (eggGameState.level * 0.4),
+                        speed: 1.5 + (eggGameState.level * 0.3),
                         blue: isBlue
                     });
                 }
@@ -666,17 +702,27 @@
                     let egg = eggGameState.eggs[i];
                     egg.y += egg.speed;
 
-                    if (egg.y >= 155 && egg.y <= 175 && egg.x >= eggGameState.basketX - 10 && egg.x <= eggGameState.basketX + 35) {
+                    if (egg.y >= 145 && egg.y <= 175 && egg.x >= eggGameState.humanX - 5 && egg.x <= eggGameState.humanX + 30) {
                         if (egg.blue) {
                             eggGameState.lives--;
+                            eggGameState.score -= 100;
+                            registerBrokenEgg();
                         } else {
                             eggGameState.score += 100;
+                            eggGameState.roundEggsCollected++;
                         }
                         eggGameState.eggs.splice(i, 1);
 
-                        if (eggGameState.score >= eggGameState.level * 500) {
+                        // Si el puntaje es negativo, Easter Egg Anticheat
+                        if (eggGameState.score < 0) {
+                            eggGameState.state = 'ANTISHEAT';
+                            continue;
+                        }
+
+                        // Meta de ronda: al coleccionar 4 huevos normales, se avanza de nivel
+                        if (eggGameState.roundEggsCollected >= 4) {
                             eggGameState.level++;
-                            if (eggGameState.level > 3) eggGameState.isInfinite = true;
+                            eggGameState.roundEggsCollected = 0; // Reinicia la cuenta para la siguiente ronda de 4
                         }
                         continue;
                     }
@@ -684,11 +730,12 @@
                     if (egg.y > 185) {
                         if (!egg.blue) {
                             eggGameState.lives--;
+                            registerBrokenEgg();
                         }
                         eggGameState.eggs.splice(i, 1);
                         
                         if (eggGameState.lives <= 0) {
-                            eggGameState.gameOver = true;
+                            eggGameState.state = 'GAMEOVER';
                             if (eggGameState.score > bestEggScore) {
                                 bestEggScore = eggGameState.score;
                             }
@@ -699,8 +746,70 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (!eggGameState.gameOver) {
-                // Dibujar juego normal
+            if (eggGameState.state === 'MENU') {
+                ctx.fillStyle = "#90ee90";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 38px 'Courier New'";
+                ctx.textAlign = "center";
+                ctx.fillText("EGG", canvas.width / 2, 75);
+                ctx.strokeStyle = "#225522";
+                ctx.lineWidth = 3;
+                ctx.strokeText("EGG", canvas.width / 2, 75);
+
+                if (Math.floor(Date.now() / 400) % 2 === 0) {
+                    ctx.fillStyle = "#225522";
+                    ctx.font = "bold 16px 'Courier New'";
+                    ctx.fillText("PRESS PLAY", canvas.width / 2, 125);
+                }
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.ellipse(55, 120, 12, 16, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.ellipse(225, 120, 12, 16, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = "#1a3b1a";
+                ctx.font = "bold 11px 'Courier New'";
+                ctx.fillText("Haz clic aquí para empezar", canvas.width / 2, 175);
+                ctx.textAlign = "left";
+
+            } else if (eggGameState.state === 'ANTISHEAT') {
+                ctx.fillStyle = "#112211";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#1e4620";
+                ctx.font = "bold 13px 'Courier New'";
+                for (let row = 15; row < canvas.height; row += 22) {
+                    ctx.fillText("CHEATER CHEATER CHEATER CHEATER", 5, row);
+                }
+
+                ctx.fillStyle = "#00ff66";
+                ctx.beginPath();
+                ctx.arc(canvas.width / 2, canvas.height / 2 - 10, 32, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = "#0a1a0a";
+                ctx.fillRect(canvas.width / 2 - 18, canvas.height / 2 - 25, 36, 45);
+                ctx.fillStyle = "#00ff66";
+                ctx.fillRect(canvas.width / 2 - 10, canvas.height / 2 - 15, 6, 6);
+                ctx.fillRect(canvas.width / 2 + 4, canvas.height / 2 - 15, 6, 6);
+
+                if (Math.floor(Date.now() / 300) % 2 === 0) {
+                    ctx.fillStyle = "#ff3333";
+                    ctx.font = "bold 14px 'Courier New'";
+                    ctx.textAlign = "center";
+                    ctx.fillText("¡YUSUFINTERCEPTZ TRAMPOSO!", canvas.width / 2, canvas.height - 15);
+                    ctx.textAlign = "left";
+                }
+
+            } else if (eggGameState.state === 'PLAYING') {
                 ctx.fillStyle = "#87ceeb";
                 ctx.fillRect(0, 0, canvas.width, 160);
                 ctx.fillStyle = "#228b22";
@@ -710,7 +819,8 @@
                 ctx.font = "bold 12px 'Courier New'";
                 let scoreStr = String(eggGameState.score).padStart(9, '0');
                 ctx.fillText(scoreStr, 15, 20);
-                ctx.fillText(eggGameState.isInfinite ? `LVL: INF` : `LVL: ${eggGameState.level}`, 200, 20);
+                // Muestra el progreso de la ronda actual (ej: 2/4 huevos)
+                ctx.fillText(`ROND: ${eggGameState.roundEggsCollected}/4`, 175, 20);
 
                 for (let h = 0; h < eggGameState.lives; h++) {
                     ctx.fillStyle = "#00ced1";
@@ -721,10 +831,22 @@
                     ctx.fill();
                 }
 
-                ctx.fillStyle = "#fff";
-                ctx.fillRect(eggGameState.basketX, 160, 30, 25);
-                ctx.fillStyle = "#000";
-                ctx.strokeRect(eggGameState.basketX, 160, 30, 25);
+                let hx = eggGameState.humanX;
+                ctx.fillStyle = "#00ced1";
+                ctx.fillRect(hx + 3, 155, 18, 20);
+                ctx.strokeStyle = "#000";
+                ctx.strokeRect(hx + 3, 155, 18, 20);
+
+                ctx.fillStyle = "#ffffff";
+                ctx.beginPath();
+                ctx.arc(hx + 12, 145, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = "#deb887";
+                ctx.fillRect(hx + 14, 160, 15, 12);
+                ctx.strokeStyle = "#000";
+                ctx.strokeRect(hx + 14, 160, 15, 12);
 
                 for (let egg of eggGameState.eggs) {
                     ctx.fillStyle = egg.blue ? "#1e90ff" : "#ffffff";
@@ -735,9 +857,7 @@
                     ctx.stroke();
                 }
 
-                eggAnimId = requestAnimationFrame(runEggLoop);
-            } else {
-                // Score Menu al perder (Basado en la referencia visual)
+            } else if (eggGameState.state === 'GAMEOVER') {
                 ctx.fillStyle = "#90ee90";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -756,29 +876,17 @@
                 let bestScoreStr = String(bestEggScore).padStart(9, '0');
                 ctx.fillText(`LAM: ${bestScoreStr}`, canvas.width / 2, 125);
 
-                // Texto parpadeante de reinicio
                 if (Math.floor(Date.now() / 400) % 2 === 0) {
                     ctx.fillStyle = "#ffcc00";
                     ctx.font = "bold 13px 'Courier New'";
                     ctx.fillText("> PLAY AGAIN <", canvas.width / 2, 165);
                 }
-
                 ctx.textAlign = "left";
-                eggAnimId = requestAnimationFrame(runEggLoop);
             }
+
+            eggAnimId = requestAnimationFrame(runEggLoop);
         }
 
-        // Permitir reiniciar haciendo clic o tocando el canvas cuando está en Game Over
-        document.addEventListener('click', (e) => {
-            if (currentModule === 'egg' && eggGameState.gameOver) {
-                const canvas = document.getElementById('eggCanvas');
-                if (canvas) {
-                    initEggGame();
-                }
-            }
-        });
-
-        // Funciones auxiliares de otros módulos
         let mediaStream = null;
         let trackCapabilities = null;
         let flashlightActive = false;
@@ -815,7 +923,10 @@
                 flashlightActive = false;
                 const stateLabel = document.getElementById('flashStateLabel');
                 const iconBox = document.getElementById('flashlightIconBox');
-                if (stateLabel) { stateLabel.textContent = "OFF"; stateLabel.style.color = "#ff4d4d"; }
+                if (stateLabel) {
+                    stateLabel.textContent = "OFF";
+                    stateLabel.style.color = "#ff4d4d";
+                }
                 if (iconBox) iconBox.style.borderColor = "currentColor";
             }
         }
