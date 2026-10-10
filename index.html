@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Doors Multi-Device Station</title>
+    <title>Doors Multi-Device Station + Egg Game</title>
     <style>
         * {
             box-sizing: border-box;
@@ -24,14 +24,10 @@
             padding: 20px 0;
         }
 
-        /* Bloqueador de pantalla horizontal (Landscape) en móviles */
         .orientation-warning {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            top: 0; left: 0; width: 100vw; height: 100vh;
             background-color: #0b0b0e;
             z-index: 9999;
             flex-direction: column;
@@ -41,22 +37,11 @@
             padding: 20px;
         }
 
-        .orientation-warning h2 {
-            color: #ffb347;
-            font-size: 20px;
-            margin-bottom: 10px;
-            letter-spacing: 1px;
-        }
-
-        .orientation-warning p {
-            color: #a0a0b0;
-            font-size: 14px;
-        }
+        .orientation-warning h2 { color: #ffb347; font-size: 20px; margin-bottom: 10px; }
+        .orientation-warning p { color: #a0a0b0; font-size: 14px; }
 
         @media screen and (max-height: 500px) and (orientation: landscape) {
-            .orientation-warning {
-                display: flex;
-            }
+            .orientation-warning { display: flex; }
         }
 
         .device-container {
@@ -70,7 +55,6 @@
             position: relative;
         }
 
-        /* Pantallas base según el módulo */
         .screen {
             border-radius: 6px;
             height: 320px;
@@ -83,38 +67,38 @@
             transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
-        /* Estilo Módulo Translator (Morado) */
         .screen.translator {
             background: radial-gradient(circle, #3b285a 0%, #1c1130 100%);
             border: 4px solid #7d5ab5;
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(125, 90, 181, 0.4);
         }
 
-        /* Estilo de Pantalla Vacía / Batería Agotada (Gris como en la imagen) */
-        .screen.dead-battery {
-            background: #2a2d34 !important;
-            border: 4px solid #3c4049 !important;
-            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9) !important;
-        }
-        .screen.dead-battery::after {
-            display: none !important;
-        }
-
-        /* Estilo Módulo Flashlight (Verde) */
         .screen.flashlight {
             background: radial-gradient(circle, #234232 0%, #0f241a 100%);
             border: 4px solid #5ab57d;
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(90, 181, 125, 0.4);
         }
 
-        /* Estilo Módulo Threat Detector (Naranja) */
         .screen.threat {
             background: radial-gradient(circle, #5a3828 0%, #301a11 100%);
             border: 4px solid #b57d5a;
             box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(181, 125, 90, 0.4);
         }
 
-        /* Efecto de escaneo CRT */
+        .screen.egg {
+            background: linear-gradient(180deg, #87ceeb 0%, #90ee90 70%, #228b22 100%);
+            border: 4px solid #d4af37;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6), 0 0 15px rgba(212, 175, 55, 0.4);
+            padding: 10px;
+        }
+
+        .screen.dead-battery {
+            background: #2a2d34 !important;
+            border: 4px solid #3c4049 !important;
+            box-shadow: inset 0 0 25px rgba(0, 0, 0, 0.9) !important;
+        }
+        .screen.dead-battery::after { display: none !important; }
+
         .screen::after {
             content: " ";
             display: block;
@@ -126,6 +110,8 @@
             pointer-events: none;
         }
 
+        .screen.egg::after { display: none; }
+
         .screen-header {
             display: flex;
             justify-content: space-between;
@@ -133,13 +119,8 @@
             z-index: 5;
         }
 
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .header-right { display: flex; align-items: center; gap: 10px; }
 
-        /* Baterías dinámicas según el módulo */
         .battery {
             display: flex;
             border: 2px solid #bba3e8;
@@ -152,10 +133,7 @@
         .battery::after {
             content: '';
             position: absolute;
-            right: -5px;
-            top: 5px;
-            width: 3px;
-            height: 6px;
+            right: -5px; top: 5px; width: 3px; height: 6px;
             background-color: inherit;
             border-radius: 0 2px 2px 0;
         }
@@ -165,40 +143,30 @@
             margin-right: 2px;
             transition: background-color 0.3s ease, opacity 0.3s ease;
         }
-        .battery-bar:last-child {
-            margin-right: 0;
-        }
-        .battery-bar.depleted {
-            background-color: transparent;
-            opacity: 0.2;
-        }
+        .battery-bar:last-child { margin-right: 0; }
+        .battery-bar.depleted { background-color: transparent; opacity: 0.2; }
 
-        /* Colores específicos de batería y títulos por módulo */
         .translator .battery { border-color: #bba3e8; }
-        .translator .battery::after { background-color: #bba3e8; }
-        .translator .battery-bar { background-color: #bba3e8; }
-        .translator .device-title { color: #e0d4f7; text-shadow: 0 0 8px rgba(224, 212, 247, 0.6); }
-
-        .dead-battery .battery { border-color: #707582; }
-        .dead-battery .battery::after { background-color: #707582; }
-        .dead-battery .battery-bar { background-color: #707582; }
-        .dead-battery .device-title { color: #8a919e; text-shadow: none; }
+        .translator .battery::after, .translator .battery-bar { background-color: #bba3e8; }
+        .translator .device-title { color: #e0d4f7; }
 
         .flashlight .battery { border-color: #a3e8bb; }
-        .flashlight .battery::after { background-color: #a3e8bb; }
-        .flashlight .battery-bar { background-color: #a3e8bb; }
-        .flashlight .device-title { color: #d4f7e0; text-shadow: 0 0 8px rgba(212, 247, 224, 0.6); }
+        .flashlight .battery::after, .flashlight .battery-bar { background-color: #a3e8bb; }
+        .flashlight .device-title { color: #d4f7e0; }
 
         .threat .battery { border-color: #e8cbb3; }
-        .threat .battery::after { background-color: #e8cbb3; }
-        .threat .battery-bar { background-color: #e8cbb3; }
-        .threat .device-title { color: #f7e2d4; text-shadow: 0 0 8px rgba(247, 226, 212, 0.6); }
+        .threat .battery::after, .threat .battery-bar { background-color: #e8cbb3; }
+        .threat .device-title { color: #f7e2d4; }
 
-        .device-title {
-            font-size: 17px;
-            font-weight: bold;
-            letter-spacing: 1.5px;
-        }
+        .egg .battery { border-color: #333; }
+        .egg .battery::after, .egg .battery-bar { background-color: #333; }
+        .egg .device-title { color: #222; text-shadow: none; font-weight: 900; }
+
+        .dead-battery .battery { border-color: #707582; }
+        .dead-battery .battery::after, .dead-battery .battery-bar { background-color: #707582; }
+        .dead-battery .device-title { color: #8a919e; text-shadow: none; }
+
+        .device-title { font-size: 17px; font-weight: bold; letter-spacing: 1.5px; }
 
         .settings-btn {
             background: rgba(0,0,0,0.3);
@@ -208,11 +176,8 @@
             font-size: 11px;
             border-radius: 4px;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        .settings-btn:hover {
-            background: rgba(255,255,255,0.2);
-        }
+        .settings-btn:hover { background: rgba(255,255,255,0.2); }
 
         .screen-body {
             flex: 1;
@@ -224,7 +189,6 @@
             z-index: 5;
         }
 
-        /* Contenidos de pantallas */
         .speech-bubble {
             border: 2px dashed #9b7ac4;
             border-radius: 20px;
@@ -234,252 +198,66 @@
             position: relative;
             background: rgba(45, 30, 75, 0.4);
         }
-        .dead-battery .speech-bubble {
-            border-color: #555b66;
-            background: rgba(60, 65, 75, 0.3);
-        }
-        .speech-bubble::after {
-            content: '';
-            position: absolute;
-            bottom: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 12px 10px 0;
-            border-style: solid;
-            border-color: #9b7ac4 transparent;
+        .dead-battery .speech-bubble { border-color: #555b66; background: rgba(60, 65, 75, 0.3); }
+
+        .status-text { font-size: 17px; color: #d1bcef; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; }
+        .dead-battery .status-text { color: #ff6b6b; }
+
+        .translated-text { font-size: 13px; color: #fff; min-height: 38px; display: flex; align-items: center; justify-content: center; }
+        .dead-battery .translated-text { color: #adb3c2; }
+
+        .module-icon-container { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+        .icon-box { border: 2px solid currentColor; border-radius: 50%; width: 90px; height: 90px; display: flex; align-items: center; justify-content: center; font-size: 40px; background: rgba(0,0,0,0.2); }
+        .module-subtext { font-size: 14px; letter-spacing: 1px; text-transform: uppercase; font-weight: bold; text-align: center; }
+
+        #eggCanvas {
+            background: transparent;
             display: block;
-            width: 0;
-        }
-        .dead-battery .speech-bubble::after {
-            border-color: #555b66 transparent;
+            margin: 0 auto;
         }
 
-        .status-text {
-            font-size: 17px;
-            color: #d1bcef;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .dead-battery .status-text {
-            color: #ff6b6b;
-        }
-
-        .translated-text {
-            font-size: 13px;
-            color: #fff;
-            min-height: 38px;
-            word-break: break-word;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            line-height: 1.3;
-        }
-        .dead-battery .translated-text {
-            color: #adb3c2;
-        }
-
-        /* Iconos de los módulos de Flashlight y Threat */
-        .module-icon-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .icon-box {
-            border: 2px solid currentColor;
-            border-radius: 50%;
-            width: 90px;
-            height: 90px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            position: relative;
-            background: rgba(0,0,0,0.2);
-        }
-
-        .module-subtext {
-            font-size: 14px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        /* Selector de Módulos (Pestañas exteriores) */
-        .module-selector {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
+        .module-selector { display: flex; gap: 6px; margin-bottom: 12px; }
         .module-tab {
             flex: 1;
             background-color: #1a1a21;
             border: 2px solid #3c3c4a;
             color: #aaa;
-            padding: 8px;
+            padding: 6px 2px;
             border-radius: 6px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             cursor: pointer;
             text-transform: uppercase;
-            transition: all 0.2s;
         }
+        .module-tab.active { background-color: #3b285a; border-color: #7d5ab5; color: #fff; }
 
-        .module-tab.active {
-            background-color: #3b285a;
-            border-color: #7d5ab5;
-            color: #fff;
-        }
-
-        /* Modal de Configuración */
         .settings-modal {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(18, 14, 28, 0.95);
-            z-index: 20;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            border-radius: 12px;
+            z-index: 20; display: none; flex-direction: column; justify-content: center; align-items: center; padding: 20px; border-radius: 12px;
         }
+        .settings-modal.active { display: flex; }
+        .settings-modal h3 { color: #e0d4f7; margin-bottom: 15px; font-size: 16px; }
+        .lang-options { display: flex; flex-direction: column; gap: 8px; width: 80%; max-width: 250px; }
+        .lang-btn { background-color: #2e1f47; border: 1px solid #7d5ab5; color: #fff; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+        .lang-btn.selected, .lang-btn:hover { background-color: #6a43a8; }
+        .close-modal { margin-top: 15px; background-color: #4a3278; font-size: 11px; padding: 6px 12px; }
 
-        .settings-modal.active {
-            display: flex;
-        }
+        .control-panel { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+        .control-panel label { font-size: 12px; color: #a0a0b0; text-transform: uppercase; }
+        .input-group { display: flex; gap: 8px; }
+        input[type="text"] { flex: 1; background-color: #15151a; border: 2px solid #3c3c4a; border-radius: 6px; padding: 10px 14px; color: #fff; font-size: 14px; outline: none; }
+        input[type="text"]:disabled { background-color: #1f2228; border-color: #353840; color: #6c7280; }
 
-        .settings-modal h3 {
-            color: #e0d4f7;
-            margin-bottom: 15px;
-            font-size: 16px;
-            letter-spacing: 1px;
-        }
+        button.action-btn { background-color: #6a43a8; color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: bold; cursor: pointer; text-transform: uppercase; font-size: 12px; }
+        button.action-btn:hover { background-color: #7d5ab5; }
+        button.action-btn:disabled { background-color: #3a3f4a; color: #6c7280; }
 
-        .lang-options {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            width: 80%;
-            max-width: 250px;
-        }
-
-        .lang-btn {
-            background-color: #2e1f47;
-            border: 1px solid #7d5ab5;
-            color: #fff;
-            padding: 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 13px;
-        }
-        .lang-btn.selected, .lang-btn:hover {
-            background-color: #6a43a8;
-        }
-
-        .close-modal {
-            margin-top: 15px;
-            background-color: #4a3278;
-            font-size: 11px;
-            padding: 6px 12px;
-        }
-
-        /* Panel de Control (Dinámico según módulo) */
-        .control-panel {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .control-panel label {
-            font-size: 12px;
-            color: #a0a0b0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .input-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        input[type="text"] {
-            flex: 1;
-            background-color: #15151a;
-            border: 2px solid #3c3c4a;
-            border-radius: 6px;
-            padding: 10px 14px;
-            color: #fff;
-            font-size: 14px;
-            outline: none;
-        }
-        input[type="text"]:focus {
-            border-color: #7d5ab5;
-        }
-        input[type="text"]:disabled {
-            background-color: #1f2228;
-            border-color: #353840;
-            color: #6c7280;
-            cursor: not-allowed;
-        }
-
-        button.action-btn {
-            background-color: #6a43a8;
-            color: white;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 12px;
-        }
-        button.action-btn:hover {
-            background-color: #7d5ab5;
-        }
-        button.action-btn:disabled {
-            background-color: #3a3f4a;
-            color: #6c7280;
-            cursor: not-allowed;
-        }
-
-        .presets-container {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .presets-title {
-            font-size: 11px;
-            color: #8c8c9e;
-            text-transform: uppercase;
-        }
-
-        .preset-buttons {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-
-        .preset-btn {
-            background-color: #2a2a36;
-            font-size: 11px;
-            padding: 6px 10px;
-            border: 1px solid #444455;
-            color: #fff;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .preset-btn:hover {
-            background-color: #3b3b4d;
-        }
+        .presets-container { display: flex; flex-direction: column; gap: 5px; }
+        .presets-title { font-size: 11px; color: #8c8c9e; text-transform: uppercase; }
+        .preset-buttons { display: flex; gap: 5px; flex-wrap: wrap; }
+        .preset-btn { background-color: #2a2a36; font-size: 11px; padding: 6px 10px; border: 1px solid #444455; color: #fff; border-radius: 4px; cursor: pointer; }
+        .preset-btn:hover { background-color: #3b3b4d; }
     </style>
 </head>
 <body>
@@ -491,9 +269,10 @@
 
     <div class="device-container">
         <div class="module-selector">
-            <button class="module-tab active" id="tabTranslator" onclick="switchModule('translator')">Translator</button>
-            <button class="module-tab" id="tabFlashlight" onclick="switchModule('flashlight')">Flashlight</button>
-            <button class="module-tab" id="tabThreat" onclick="switchModule('threat')">Threat Detector</button>
+            <button class="module-tab active" id="tabTranslator" onclick="switchModule('translator')">Trans.</button>
+            <button class="module-tab" id="tabFlashlight" onclick="switchModule('flashlight')">Flash</button>
+            <button class="module-tab" id="tabThreat" onclick="switchModule('threat')">Threat</button>
+            <button class="module-tab" id="tabEgg" onclick="switchModule('egg')">Egg/Charles</button>
         </div>
 
         <div class="screen translator" id="mainScreen">
@@ -510,7 +289,7 @@
             </div>
 
             <div class="screen-header">
-                <div class="battery" id="batteryContainer" title="Batería (148s totales / 37s por barra)">
+                <div class="battery" id="batteryContainer" title="Batería">
                     <div class="battery-bar"></div>
                     <div class="battery-bar"></div>
                     <div class="battery-bar"></div>
@@ -518,16 +297,14 @@
                 </div>
                 <div class="device-title" id="deviceTitle">TRANSLATOR</div>
                 <div class="header-right">
-                    <button class="settings-btn" onclick="toggleSettings(true)">⚙️️ Config</button>
+                    <button class="settings-btn" onclick="toggleSettings(true)">⚙ Config</button>
                 </div>
             </div>
 
-            <div class="screen-body" id="screenBodyContent">
-            </div>
+            <div class="screen-body" id="screenBodyContent"></div>
         </div>
 
-        <div class="control-panel" id="controlPanel">
-        </div>
+        <div class="control-panel" id="controlPanel"></div>
     </div>
 
     <script>
@@ -541,6 +318,7 @@
                 translator: "TRANSLATOR",
                 flashlight: "FLASHLIGHT",
                 threat: "THREAT DETECTOR",
+                egg: "EGG / CHARLES",
                 waiting: "Esperando...",
                 scannerLabel: "Escáner de Textos (Entrada):",
                 scanBtn: "Escanear",
@@ -561,6 +339,7 @@
                 translator: "TRANSLATOR",
                 flashlight: "FLASHLIGHT",
                 threat: "THREAT DETECTOR",
+                egg: "EGG / CHARLES",
                 waiting: "Waiting...",
                 scannerLabel: "Text Scanner (Input):",
                 scanBtn: "Scan",
@@ -581,6 +360,7 @@
                 translator: "TRANSLATOR",
                 flashlight: "FLASHLIGHT",
                 threat: "THREAT DETECTOR",
+                egg: "EGG / CHARLES",
                 waiting: "Aguardando...",
                 scannerLabel: "Scanner de Texto:",
                 scanBtn: "Escanear",
@@ -601,6 +381,7 @@
                 translator: "TRANSLATOR",
                 flashlight: "FLASHLIGHT",
                 threat: "THREAT DETECTOR",
+                egg: "EGG / CHARLES",
                 waiting: "En attente...",
                 scannerLabel: "Scanner de Texte:",
                 scanBtn: "Scanner",
@@ -621,6 +402,7 @@
                 translator: "TRANSLATOR",
                 flashlight: "FLASHLIGHT",
                 threat: "THREAT DETECTOR",
+                egg: "EGG / CHARLES",
                 waiting: "Warten...",
                 scannerLabel: "Textscanner:",
                 scanBtn: "Scannen",
@@ -640,9 +422,7 @@
 
         function detectUserLanguage() {
             const navLang = (navigator.language || navigator.userLanguage || 'en').substring(0, 2).toLowerCase();
-            if (uiTexts[navLang]) {
-                currentLang = navLang;
-            }
+            if (uiTexts[navLang]) currentLang = navLang;
             updateOrientationTexts();
         }
 
@@ -650,33 +430,28 @@
             const t = uiTexts[currentLang];
             const wTitle = document.getElementById('warningTitle');
             const wText = document.getElementById('warningText');
-            if(wTitle && wText) {
-                wTitle.textContent = t.warningTitle;
-                wText.textContent = t.warningText;
-            }
+            if(wTitle && wText) { wTitle.textContent = t.warningTitle; wText.textContent = t.warningText; }
         }
 
         function updateLangButtonsUI() {
             document.querySelectorAll('.lang-btn').forEach(btn => {
                 btn.classList.remove('selected');
-                if(btn.getAttribute('onclick').includes(`'${currentLang}'`)) {
-                    btn.classList.add('selected');
-                }
+                if(btn.getAttribute('onclick').includes(`'${currentLang}'`)) btn.classList.add('selected');
             });
         }
 
-        // Configuración exacta: 37 segundos por barra, 148 segundos en total (148000 ms)
-        const totalDurationMs = 148000; 
-        const batteryBars = document.querySelectorAll('.battery-bar');
-        let intervalTimeMs = totalDurationMs / batteryBars.length; // 37000 ms (37s) por barra
-        let currentBarIndex = batteryBars.length - 1;
         let batteryTimer = null;
+        let currentBarIndex = 3;
 
         function startBatteryDrain() {
             if (batteryTimer) clearInterval(batteryTimer);
+            const batteryBars = document.querySelectorAll('.battery-bar');
             batteryBars.forEach(bar => bar.classList.remove('depleted'));
             currentBarIndex = batteryBars.length - 1;
             batteryDepleted = false;
+
+            const totalDurationMs = (currentModule === 'egg') ? 268000 : 148000;
+            const intervalTimeMs = totalDurationMs / batteryBars.length;
 
             batteryTimer = setInterval(() => {
                 if (currentBarIndex >= 0) {
@@ -686,35 +461,31 @@
                     clearInterval(batteryTimer);
                     batteryDepleted = true;
                     if (flashlightActive) togglePhoneFlashlight(false);
+                    if (currentModule === 'egg') stopEggGame(false);
                     
                     const mainScreen = document.getElementById('mainScreen');
                     mainScreen.className = "screen dead-battery";
                     
                     const t = uiTexts[currentLang];
                     if(currentModule === 'translator') {
-                        const statusText = document.getElementById('statusText');
-                        const translatedText = document.getElementById('translatedText');
-                        const textScanner = document.getElementById('textScanner');
-                        const scanBtn = document.getElementById('scanBtn');
-
-                        if(statusText) statusText.textContent = t.lowBattery;
-                        if(translatedText) translatedText.textContent = t.shutDownMessage;
-                        if(textScanner) textScanner.disabled = true;
-                        if(scanBtn) scanBtn.disabled = true;
+                        document.getElementById('statusText').textContent = t.lowBattery;
+                        document.getElementById('translatedText').textContent = t.shutDownMessage;
+                        document.getElementById('textScanner').disabled = true;
+                        document.getElementById('scanBtn').disabled = true;
                     }
                 }
             }, intervalTimeMs);
         }
 
         function resetBattery() {
+            if(currentModule === 'egg') initEggGame();
             startBatteryDrain();
             switchModule(currentModule);
         }
 
         function switchModule(moduleName) {
-            if (currentModule === 'flashlight' && moduleName !== 'flashlight') {
-                togglePhoneFlashlight(false);
-            }
+            if (currentModule === 'flashlight' && moduleName !== 'flashlight') togglePhoneFlashlight(false);
+            if (currentModule === 'egg' && moduleName !== 'egg') stopEggGame(true);
 
             currentModule = moduleName;
             const mainScreen = document.getElementById('mainScreen');
@@ -731,6 +502,8 @@
             } else {
                 mainScreen.className = `screen ${moduleName}`;
             }
+
+            startBatteryDrain();
 
             if (moduleName === 'translator') {
                 deviceTitle.textContent = t.translator;
@@ -752,7 +525,6 @@
                             <button class="preset-btn" onclick="setPreset('')">${t.btnReset}</button>
                             <button class="preset-btn" onclick="setPreset('cobbler name. salutation!')">Cobbler</button>
                             <button class="preset-btn" onclick="setPreset('find drink shiny water give cobbler energy, like specie.')">Agua</button>
-                            <button class="preset-btn" onclick="setPreset('television creature sandy cobbler...')">TV</button>
                             <button class="preset-btn" onclick="resetBattery()">${t.btnBattery}</button>
                         </div>
                     </div>
@@ -799,9 +571,214 @@
                         </div>
                     </div>
                 `;
+
+            } else if (moduleName === 'egg') {
+                deviceTitle.textContent = "EGG";
+                screenBody.innerHTML = `
+                    <canvas id="eggCanvas" width="280" height="200"></canvas>
+                `;
+                controlPanel.innerHTML = `
+                    <div class="presets-container" style="align-items: center;">
+                        <div class="presets-title">Controles (Canasto):</div>
+                        <div class="preset-buttons" style="justify-content: center; width: 100%;">
+                            <button class="preset-btn" style="padding: 10px 20px; font-size: 16px;" onclick="moveBasket(-25)">◀ IZQ</button>
+                            <button class="preset-btn" style="padding: 10px 20px; font-size: 16px;" onclick="moveBasket(25)">DER ▶</button>
+                            <button class="preset-btn" style="background-color: #6a43a8;" onclick="initEggGame()">Reiniciar</button>
+                        </div>
+                    </div>
+                `;
+                initEggGame();
             }
         }
 
+        /* --- MOTOR DEL JUEGO EGG / CHARLES CON SCORE MENU --- */
+        let eggAnimId = null;
+        let bestEggScore = 0;
+        let eggGameState = {
+            score: 0,
+            lives: 3,
+            level: 1,
+            isInfinite: false,
+            basketX: 120,
+            eggs: [],
+            spawnTimer: 0,
+            gameStarted: false,
+            gameOver: false
+        };
+
+        function initEggGame() {
+            eggGameState = {
+                score: 0,
+                lives: 3,
+                level: 1,
+                isInfinite: false,
+                basketX: 120,
+                eggs: [],
+                spawnTimer: 0,
+            };
+            // Si el juego ya había terminado, reiniciamos el estado por completo
+            eggGameState.gameStarted = true;
+            eggGameState.gameOver = false;
+            
+            if(eggAnimId) cancelAnimationFrame(eggAnimId);
+            runEggLoop();
+        }
+
+        function stopEggGame(paused) {
+            if(eggAnimId) cancelAnimationFrame(eggAnimId);
+            eggGameState.gameStarted = false;
+        }
+
+        function moveBasket(offset) {
+            if (!eggGameState.gameStarted || eggGameState.gameOver) return;
+            eggGameState.basketX += offset;
+            if (eggGameState.basketX < 10) eggGameState.basketX = 10;
+            if (eggGameState.basketX > 240) eggGameState.basketX = 240;
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (currentModule === 'egg') {
+                if (e.key === 'ArrowLeft') moveBasket(-25);
+                if (e.key === 'ArrowRight') moveBasket(25);
+            }
+        });
+
+        function runEggLoop() {
+            const canvas = document.getElementById('eggCanvas');
+            if (!canvas || !eggGameState.gameStarted) return;
+            const ctx = canvas.getContext('2d');
+
+            if (!eggGameState.gameOver) {
+                eggGameState.spawnTimer++;
+                let spawnRate = Math.max(40 - (eggGameState.level * 3), 15);
+                if (eggGameState.spawnTimer > spawnRate) {
+                    eggGameState.spawnTimer = 0;
+                    let isBlue = Math.random() < 0.25;
+                    eggGameState.eggs.push({
+                        x: Math.random() * 240 + 20,
+                        y: 0,
+                        speed: 1.5 + (eggGameState.level * 0.4),
+                        blue: isBlue
+                    });
+                }
+
+                for (let i = eggGameState.eggs.length - 1; i >= 0; i--) {
+                    let egg = eggGameState.eggs[i];
+                    egg.y += egg.speed;
+
+                    if (egg.y >= 155 && egg.y <= 175 && egg.x >= eggGameState.basketX - 10 && egg.x <= eggGameState.basketX + 35) {
+                        if (egg.blue) {
+                            eggGameState.lives--;
+                        } else {
+                            eggGameState.score += 100;
+                        }
+                        eggGameState.eggs.splice(i, 1);
+
+                        if (eggGameState.score >= eggGameState.level * 500) {
+                            eggGameState.level++;
+                            if (eggGameState.level > 3) eggGameState.isInfinite = true;
+                        }
+                        continue;
+                    }
+
+                    if (egg.y > 185) {
+                        if (!egg.blue) {
+                            eggGameState.lives--;
+                        }
+                        eggGameState.eggs.splice(i, 1);
+                        
+                        if (eggGameState.lives <= 0) {
+                            eggGameState.gameOver = true;
+                            if (eggGameState.score > bestEggScore) {
+                                bestEggScore = eggGameState.score;
+                            }
+                        }
+                    }
+                }
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!eggGameState.gameOver) {
+                // Dibujar juego normal
+                ctx.fillStyle = "#87ceeb";
+                ctx.fillRect(0, 0, canvas.width, 160);
+                ctx.fillStyle = "#228b22";
+                ctx.fillRect(0, 160, canvas.width, 40);
+
+                ctx.fillStyle = "#000";
+                ctx.font = "bold 12px 'Courier New'";
+                let scoreStr = String(eggGameState.score).padStart(9, '0');
+                ctx.fillText(scoreStr, 15, 20);
+                ctx.fillText(eggGameState.isInfinite ? `LVL: INF` : `LVL: ${eggGameState.level}`, 200, 20);
+
+                for (let h = 0; h < eggGameState.lives; h++) {
+                    ctx.fillStyle = "#00ced1";
+                    ctx.beginPath();
+                    let hx = 25 + (h * 20);
+                    let hy = 32;
+                    ctx.arc(hx, hy, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                ctx.fillStyle = "#fff";
+                ctx.fillRect(eggGameState.basketX, 160, 30, 25);
+                ctx.fillStyle = "#000";
+                ctx.strokeRect(eggGameState.basketX, 160, 30, 25);
+
+                for (let egg of eggGameState.eggs) {
+                    ctx.fillStyle = egg.blue ? "#1e90ff" : "#ffffff";
+                    ctx.beginPath();
+                    ctx.ellipse(egg.x, egg.y, 8, 11, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = "#000";
+                    ctx.stroke();
+                }
+
+                eggAnimId = requestAnimationFrame(runEggLoop);
+            } else {
+                // Score Menu al perder (Basado en la referencia visual)
+                ctx.fillStyle = "#90ee90";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = "#225522";
+                ctx.font = "bold 12px 'Courier New'";
+                ctx.textAlign = "center";
+                ctx.fillText("YOUR SCORE", canvas.width / 2, 55);
+
+                ctx.fillStyle = "#004d00";
+                ctx.font = "bold 18px 'Courier New'";
+                let finalScoreStr = String(eggGameState.score).padStart(9, '0');
+                ctx.fillText(finalScoreStr, canvas.width / 2, 85);
+
+                ctx.fillStyle = "#004d00";
+                ctx.font = "bold 15px 'Courier New'";
+                let bestScoreStr = String(bestEggScore).padStart(9, '0');
+                ctx.fillText(`LAM: ${bestScoreStr}`, canvas.width / 2, 125);
+
+                // Texto parpadeante de reinicio
+                if (Math.floor(Date.now() / 400) % 2 === 0) {
+                    ctx.fillStyle = "#ffcc00";
+                    ctx.font = "bold 13px 'Courier New'";
+                    ctx.fillText("> PLAY AGAIN <", canvas.width / 2, 165);
+                }
+
+                ctx.textAlign = "left";
+                eggAnimId = requestAnimationFrame(runEggLoop);
+            }
+        }
+
+        // Permitir reiniciar haciendo clic o tocando el canvas cuando está en Game Over
+        document.addEventListener('click', (e) => {
+            if (currentModule === 'egg' && eggGameState.gameOver) {
+                const canvas = document.getElementById('eggCanvas');
+                if (canvas) {
+                    initEggGame();
+                }
+            }
+        });
+
+        // Funciones auxiliares de otros módulos
         let mediaStream = null;
         let trackCapabilities = null;
         let flashlightActive = false;
@@ -814,34 +791,16 @@
 
             if (!flashlightActive) {
                 try {
-                    mediaStream = await navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'environment' }
-                    });
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
                     const track = mediaStream.getVideoTracks()[0];
                     trackCapabilities = track.getCapabilities();
-
-                    if (!trackCapabilities.torch) {
-                        alert(t.notSupported);
-                        stopMediaStream();
-                        return;
-                    }
-
+                    if (!trackCapabilities.torch) { alert(t.notSupported); stopMediaStream(); return; }
                     await track.applyConstraints({ advanced: [{ torch: true }] });
                     flashlightActive = true;
-
-                    if (stateLabel) {
-                        stateLabel.textContent = "ON";
-                        stateLabel.style.color = "#4dff4d";
-                    }
+                    if (stateLabel) { stateLabel.textContent = "ON"; stateLabel.style.color = "#4dff4d"; }
                     if (iconBox) iconBox.style.borderColor = "#4dff4d";
-
-                } catch (err) {
-                    console.error(err);
-                    alert(t.notSupported + " (Permiso denegado o dispositivo sin flash)");
-                }
-            } else {
-                togglePhoneFlashlight(false);
-            }
+                } catch (err) { alert(t.notSupported); }
+            } else { togglePhoneFlashlight(false); }
         }
 
         function togglePhoneFlashlight(turnOff) {
@@ -856,19 +815,13 @@
                 flashlightActive = false;
                 const stateLabel = document.getElementById('flashStateLabel');
                 const iconBox = document.getElementById('flashlightIconBox');
-                if (stateLabel) {
-                    stateLabel.textContent = "OFF";
-                    stateLabel.style.color = "#ff4d4d";
-                }
+                if (stateLabel) { stateLabel.textContent = "OFF"; stateLabel.style.color = "#ff4d4d"; }
                 if (iconBox) iconBox.style.borderColor = "currentColor";
             }
         }
 
         function stopMediaStream() {
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => track.stop());
-                mediaStream = null;
-            }
+            if (mediaStream) { mediaStream.getTracks().forEach(track => track.stop()); mediaStream = null; }
         }
 
         let threatActive = false;
@@ -879,13 +832,9 @@
             const icon = document.getElementById('threatIcon');
             const t = uiTexts[currentLang];
             if(threatActive) {
-                status.textContent = t.threatAlert;
-                status.style.color = "#ff4d4d";
-                icon.style.borderColor = "#ff4d4d";
+                status.textContent = t.threatAlert; status.style.color = "#ff4d4d"; icon.style.borderColor = "#ff4d4d";
             } else {
-                status.textContent = t.threatStatus;
-                status.style.color = "#fff";
-                icon.style.borderColor = "currentColor";
+                status.textContent = t.threatStatus; status.style.color = "#fff"; icon.style.borderColor = "currentColor";
             }
         }
 
@@ -899,29 +848,21 @@
             const t = uiTexts[currentLang];
 
             if (rawText === "") {
-                statusText.textContent = t.waiting;
-                translatedText.textContent = "";
-                statusText.style.color = "#d1bcef";
+                statusText.textContent = t.waiting; translatedText.textContent = ""; statusText.style.color = "#d1bcef";
             } else {
-                statusText.textContent = "COBBLER";
-                statusText.style.color = "#ffb347";
-                translatedText.textContent = `"${rawText}"`;
+                statusText.textContent = "COBBLER"; statusText.style.color = "#ffb347"; translatedText.textContent = `"${rawText}"`;
             }
         }
 
         function setPreset(text) {
             if (batteryDepleted) return;
             const textScanner = document.getElementById('textScanner');
-            if(textScanner) {
-                textScanner.value = text;
-                processTranslation();
-            }
+            if(textScanner) { textScanner.value = text; processTranslation(); }
         }
 
         function toggleSettings(show) {
             const modal = document.getElementById('settingsModal');
-            if (show) modal.classList.add('active');
-            else modal.classList.remove('active');
+            if (show) modal.classList.add('active'); else modal.classList.remove('active');
         }
 
         function changeLanguage(lang) {
@@ -936,7 +877,6 @@
         detectUserLanguage();
         updateLangButtonsUI();
         switchModule('translator');
-        startBatteryDrain();
     </script>
 </body>
 </html>
